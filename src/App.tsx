@@ -1,35 +1,39 @@
 import { useState, useEffect, useCallback } from 'react';
 import './App.css';
-import { Grid, initGame, move, addRandomTile, isGameOver } from './gameLogic';
+import { Tile, initGame, move, addRandomTile, isGameOver } from './gameLogic';
 
 function App() {
-  const [grid, setGrid] = useState<Grid>(initGame());
+  const [tiles, setTiles] = useState<Tile[]>(initGame());
   const [score, setScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
 
-  const handleKeyDown = useCallback(
-    (event: KeyboardEvent) => {
+  const handleMove = useCallback(
+    (direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT') => {
       if (gameOver) return;
-
-      let direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT' | null = null;
-      if (event.key === 'ArrowUp') direction = 'UP';
-      else if (event.key === 'ArrowDown') direction = 'DOWN';
-      else if (event.key === 'ArrowLeft') direction = 'LEFT';
-      else if (event.key === 'ArrowRight') direction = 'RIGHT';
-
-      if (direction) {
-        const { grid: newGrid, score: addedScore, changed } = move(grid, direction);
-        if (changed) {
-          const gridWithNewTile = addRandomTile(newGrid);
-          setGrid(gridWithNewTile);
-          setScore((prev: number) => prev + addedScore);
-          if (isGameOver(gridWithNewTile)) {
-            setGameOver(true);
-          }
+      const { tiles: newTiles, score: addedScore, changed } = move(tiles, direction);
+      if (changed) {
+        const tilesWithNewTile = addRandomTile(newTiles);
+        setTiles(tilesWithNewTile);
+        setScore((prev: number) => prev + addedScore);
+        if (isGameOver(tilesWithNewTile)) {
+          setGameOver(true);
         }
       }
     },
-    [grid, gameOver]
+    [tiles, gameOver]
+  );
+
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
+        event.preventDefault(); // Prevent scrolling
+      }
+      if (event.key === 'ArrowUp') handleMove('UP');
+      else if (event.key === 'ArrowDown') handleMove('DOWN');
+      else if (event.key === 'ArrowLeft') handleMove('LEFT');
+      else if (event.key === 'ArrowRight') handleMove('RIGHT');
+    },
+    [handleMove]
   );
 
   useEffect(() => {
@@ -37,14 +41,44 @@ function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
+  const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart({ x: e.touches[0].clientX, y: e.touches[0].clientY });
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStart) return;
+    const touchEnd = { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+    const dx = touchEnd.x - touchStart.x;
+    const dy = touchEnd.y - touchStart.y;
+
+    if (Math.abs(dx) > Math.abs(dy)) {
+      if (Math.abs(dx) > 30) {
+        handleMove(dx > 0 ? 'RIGHT' : 'LEFT');
+      }
+    } else {
+      if (Math.abs(dy) > 30) {
+        handleMove(dy > 0 ? 'DOWN' : 'UP');
+      }
+    }
+    setTouchStart(null);
+  };
+
   const resetGame = () => {
-    setGrid(initGame());
+    setTiles(initGame());
     setScore(0);
     setGameOver(false);
   };
 
+  const sortedTiles = [...tiles].sort((a, b) => a.id - b.id);
+
   return (
-    <div className="container">
+    <div
+      className="container"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
       <div className="header">
         <h1>2048</h1>
         <div className="score-container">
@@ -77,20 +111,19 @@ function App() {
               <div key={`${r}-${c}`} className="grid-cell"></div>
             ))
           )}
-  {grid.map((row, r) =>
-    row.map((tile, c) =>
-      tile ? (
-        <div
-          key={tile.id}
-          className={`tile tile-${tile.value} tile-pos-${r}-${c} ${
-            tile.merged ? 'tile-merged' : ''
-          } ${tile.value > 2048 ? 'tile-super' : ''}`}
-        >
-          <div className="tile-inner">{tile.value}</div>
-        </div>
-      ) : null
-    )
-  )}
+          {sortedTiles.map((tile) => (
+            <div
+              key={tile.id}
+              style={{ '--r': tile.r, '--c': tile.c } as React.CSSProperties}
+              className={`tile tile-${tile.value} ${
+                tile.isMerged ? 'tile-merged' : ''
+              } ${tile.isNew ? 'tile-new' : ''} ${
+                tile.value > 2048 ? 'tile-super' : ''
+              } ${tile.isDestroyed ? 'tile-destroyed' : ''}`}
+            >
+              <div className="tile-inner">{tile.value}</div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
