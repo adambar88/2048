@@ -114,17 +114,11 @@ export const isGameOver = (tiles: Tile[]): boolean => {
   const active = tiles.filter((t) => !t.isDestroyed);
   if (active.length < GRID_SIZE * GRID_SIZE) return false;
 
-  for (let r = 0; r < GRID_SIZE; r++) {
-    for (let c = 0; c < GRID_SIZE; c++) {
-      const tile = active.find((t) => t.r === r && t.c === c);
-      if (!tile) return false;
-
-      const right = active.find((t) => t.r === r && t.c === c + 1);
-      if (right && tile.value === right.value) return false;
-
-      const down = active.find((t) => t.r === r + 1 && t.c === c);
-      if (down && tile.value === down.value) return false;
-    }
+  const directions: ('UP' | 'DOWN' | 'LEFT' | 'RIGHT')[] = ['UP', 'DOWN', 'LEFT', 'RIGHT'];
+  for (const dir of directions) {
+    const { changed } = move(active, dir);
+    if (changed) return false;
   }
+  
   return true;
 };
