@@ -72,17 +72,25 @@ function App() {
           </div>
         )}
         <div className="grid-container">
-          {grid.map((row, r) =>
-            row.map((tile, c) => (
-              <div key={`${r}-${c}`} className="grid-cell">
-                {tile && (
-                  <div className={`tile tile-${tile}`}>
-                    <div className="tile-inner">{tile}</div>
-                  </div>
-                )}
-              </div>
+          {[0, 1, 2, 3].map((r) =>
+            [0, 1, 2, 3].map((c) => (
+              <div key={`${r}-${c}`} className="grid-cell"></div>
             ))
           )}
+  {grid.map((row, r) =>
+    row.map((tile, c) =>
+      tile ? (
+        <div
+          key={tile.id}
+          className={`tile tile-${tile.value} tile-pos-${r}-${c} ${
+            tile.merged ? 'tile-merged' : ''
+          } ${tile.value > 2048 ? 'tile-super' : ''}`}
+        >
+          <div className="tile-inner">{tile.value}</div>
+        </div>
+      ) : null
+    )
+  )}
         </div>
       </div>
     </div>

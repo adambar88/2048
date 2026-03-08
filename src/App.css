@@ -95,6 +95,7 @@ h1 {
   gap: 15px;
   width: 100%;
   height: 100%;
+  position: relative;
 }
 
 .grid-cell {
@@ -102,23 +103,53 @@ h1 {
   height: 106.25px;
   background: var(--cell-bg);
   border-radius: 3px;
-  position: relative;
 }
 
 .tile {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  width: 106.25px;
+  height: 106.25px;
   border-radius: 3px;
   display: flex;
   justify-content: center;
   align-items: center;
   font-size: 55px;
   font-weight: bold;
-  transition: transform 0.1s;
+  transition: transform 100ms ease-in-out;
+  animation: appear 200ms ease-in-out;
 }
+
+@keyframes appear {
+  0% { opacity: 0; transform: scale(0); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.tile-merged {
+  animation: pop 200ms ease-in-out;
+}
+
+@keyframes pop {
+  0% { transform: scale(0); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+.tile-pos-0-0 { transform: translate(0px, 0px); }
+.tile-pos-0-1 { transform: translate(121.25px, 0px); }
+.tile-pos-0-2 { transform: translate(242.5px, 0px); }
+.tile-pos-0-3 { transform: translate(363.75px, 0px); }
+.tile-pos-1-0 { transform: translate(0px, 121.25px); }
+.tile-pos-1-1 { transform: translate(121.25px, 121.25px); }
+.tile-pos-1-2 { transform: translate(242.5px, 121.25px); }
+.tile-pos-1-3 { transform: translate(363.75px, 121.25px); }
+.tile-pos-2-0 { transform: translate(0px, 242.5px); }
+.tile-pos-2-1 { transform: translate(121.25px, 242.5px); }
+.tile-pos-2-2 { transform: translate(242.5px, 242.5px); }
+.tile-pos-2-3 { transform: translate(363.75px, 242.5px); }
+.tile-pos-3-0 { transform: translate(0px, 363.75px); }
+.tile-pos-3-1 { transform: translate(121.25px, 363.75px); }
+.tile-pos-3-2 { transform: translate(242.5px, 363.75px); }
+.tile-pos-3-3 { transform: translate(363.75px, 363.75px); }
 
 .tile-inner {
   z-index: 10;

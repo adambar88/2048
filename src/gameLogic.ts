@@ -1,6 +1,15 @@
-export type Grid = (number | null)[][];
+export interface Tile {
+  id: number;
+  value: number;
+  merged?: boolean;
+}
+
+export type Grid = (Tile | null)[][];
 
 export const GRID_SIZE = 4;
+
+let nextId = 0;
+const getNextId = () => nextId++;
 
 export const createEmptyGrid = (): Grid => {
   return Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(null));
@@ -23,7 +32,10 @@ export const addRandomTile = (grid: Grid): Grid => {
   const newGrid = grid.map((row) => [...row]);
   const cell = getRandomEmptyCell(newGrid);
   if (cell) {
-    newGrid[cell.r][cell.c] = Math.random() < 0.9 ? 2 : 4;
+    newGrid[cell.r][cell.c] = {
+      id: getNextId(),
+      value: Math.random() < 0.9 ? 2 : 4,
+    };
   }
   return newGrid;
 };
@@ -39,11 +51,17 @@ const moveLeft = (grid: Grid): { grid: Grid; score: number; changed: boolean } =
   let score = 0;
   let changed = false;
   const newGrid = grid.map((row) => {
-    let newRow: (number | null)[] = row.filter((val) => val !== null);
+    let newRow: (Tile | null)[] = row.filter((val) => val !== null);
     for (let i = 0; i < newRow.length - 1; i++) {
-      if (newRow[i] === newRow[i + 1]) {
-        newRow[i] = (newRow[i] as number) * 2;
-        score += newRow[i] as number;
+      const current = newRow[i];
+      const next = newRow[i + 1];
+      if (current && next && current.value === next.value) {
+        newRow[i] = {
+          id: getNextId(),
+          value: current.value * 2,
+          merged: true,
+        };
+        score += current.value * 2;
         newRow.splice(i + 1, 1);
         changed = true;
       }
@@ -51,8 +69,13 @@ const moveLeft = (grid: Grid): { grid: Grid; score: number; changed: boolean } =
     while (newRow.length < GRID_SIZE) {
       newRow.push(null);
     }
-    if (JSON.stringify(newRow) !== JSON.stringify(row)) {
-      changed = true;
+    
+    // Check if changed
+    for (let i = 0; i < GRID_SIZE; i++) {
+      if (newRow[i]?.id !== row[i]?.id) {
+        changed = true;
+        break;
+      }
     }
     return newRow;
   });
@@ -73,7 +96,8 @@ export const move = (
   grid: Grid,
   direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT'
 ): { grid: Grid; score: number; changed: boolean } => {
-  let currentGrid = grid;
+  // Clear merged flags from previous move
+  let currentGrid: Grid = grid.map(row => row.map(tile => tile ? { ...tile, merged: false } : null));
   let rotations = 0;
 
   switch (direction) {
@@ -108,9 +132,14 @@ export const move = (
 export const isGameOver = (grid: Grid): boolean => {
   for (let r = 0; r < GRID_SIZE; r++) {
     for (let c = 0; c < GRID_SIZE; c++) {
-      if (grid[r][c] === null) return false;
-      if (c < GRID_SIZE - 1 && grid[r][c] === grid[r][c + 1]) return false;
-      if (r < GRID_SIZE - 1 && grid[r][c] === grid[r + 1][c]) return false;
+      const current = grid[r][c];
+      if (current === null) return false;
+      
+      const right = c < GRID_SIZE - 1 ? grid[r][c + 1] : null;
+      if (right && current.value === right.value) return false;
+      
+      const down = r < GRID_SIZE - 1 ? grid[r + 1][c] : null;
+      if (down && current.value === down.value) return false;
     }
   }
   return true;
