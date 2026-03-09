@@ -21,6 +21,8 @@ body {
   min-height: 100dvh;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: safe center;
   width: 100%;
+  padding: 16px 0;
+  box-sizing: border-box;
 }
