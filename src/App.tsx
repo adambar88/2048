@@ -319,7 +319,7 @@ function App() {
           >
             Undo
           </button>
-          <button className="restart-button" onClick={resetGame}>
+          <button className="restart-button" onClick={() => resetGame()}>
             New Game
           </button>
         </div>
@@ -330,7 +330,7 @@ function App() {
             <p>Game over!</p>
             <span className="sub-text">Score: {score}</span>
             <div className="lower">
-              <button className="retry-button" onClick={resetGame}>
+              <button className="retry-button" onClick={() => resetGame()}>
                 Try again
               </button>
             </div>
@@ -344,7 +344,7 @@ function App() {
               <button className="keep-playing-button" onClick={() => setKeepPlaying(true)}>
                 Keep playing
               </button>
-              <button className="retry-button" onClick={resetGame}>
+              <button className="retry-button" onClick={() => resetGame()}>
                 New Game
               </button>
             </div>
