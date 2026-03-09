@@ -3,6 +3,8 @@
 :root {
   --board-size: min(480px, 92vw);
   --cell-gap: 12px;
+  --grid-size: 4;
+  /* These are overridden per-grid-size via inline style on .container in React */
   --cell-size: calc((var(--board-size) - var(--cell-gap) * 5) / 4);
   --cell-step: calc(var(--cell-size) + var(--cell-gap));
 
@@ -335,8 +337,8 @@ h1 {
 
 .grid-container {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  grid-template-rows: repeat(4, 1fr);
+  grid-template-columns: repeat(var(--grid-size), 1fr);
+  grid-template-rows: repeat(var(--grid-size), 1fr);
   gap: var(--cell-gap);
   width: 100%;
   height: 100%;
@@ -817,6 +819,44 @@ h1 {
 .undo-button:disabled {
   opacity: 0.28;
   cursor: default;
+}
+
+.size-selector {
+  display: flex;
+  gap: 4px;
+}
+
+.size-btn {
+  flex: 1;
+  background: var(--btn-bg);
+  border: 1px solid var(--btn-border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  letter-spacing: 0.03em;
+  height: 36px;
+  padding: 0 6px;
+  cursor: pointer;
+  transition: background 150ms, transform 130ms;
+  white-space: nowrap;
+  text-align: center;
+  line-height: 1;
+}
+
+.size-btn:hover {
+  background: var(--btn-bg-hover);
+  transform: translateY(-1px);
+}
+
+.size-btn:active {
+  transform: translateY(0);
+}
+
+.size-btn-active {
+  background: var(--btn-bg-hover);
+  border-color: var(--text-dim);
 }
 
 /* ── Milestone banner ─────────────────────────────── */

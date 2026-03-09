@@ -5,6 +5,10 @@ import { Tile, initGame, move, addRandomTile, isGameOver } from './gameLogic';
 const SAVE_KEY = '2048-save';
 const STATS_KEY = '2048-stats';
 const THEME_KEY = '2048-theme';
+const SIZE_KEY = '2048-size';
+
+const SIZES = [3, 4, 5] as const;
+type GridSize = (typeof SIZES)[number];
 
 interface Stats {
   gamesPlayed: number;
@@ -30,6 +34,7 @@ interface SavedState {
   score: number;
   hasWon: boolean;
   keepPlaying: boolean;
+  gridSize: GridSize;
 }
 
 function loadSave(): SavedState | null {
@@ -44,13 +49,18 @@ function loadSave(): SavedState | null {
 function App() {
   const saved = loadSave();
 
-  const [tiles, setTiles] = useState<Tile[]>(() => saved?.tiles ?? initGame());
+  const [gridSize, setGridSize] = useState<GridSize>(() => {
+    const stored = parseInt(localStorage.getItem(SIZE_KEY) ?? '4', 10);
+    return (SIZES as readonly number[]).includes(stored) ? (stored as GridSize) : 4;
+  });
+
+  const [tiles, setTiles] = useState<Tile[]>(() => saved?.tiles ?? initGame(gridSize));
   const [score, setScore] = useState(() => saved?.score ?? 0);
   const [bestScore, setBestScore] = useState<number>(() =>
     parseInt(localStorage.getItem('2048-best') ?? '0', 10)
   );
   const [gameOver, setGameOver] = useState(() =>
-    saved ? isGameOver(saved.tiles) : false
+    saved ? isGameOver(saved.tiles, saved.gridSize ?? 4) : false
   );
   const [hasWon, setHasWon] = useState(() => saved?.hasWon ?? false);
   const [keepPlaying, setKeepPlaying] = useState(() => saved?.keepPlaying ?? false);
@@ -78,9 +88,9 @@ function App() {
 
   // Persist game state after every move
   useEffect(() => {
-    const state: SavedState = { tiles, score, hasWon, keepPlaying };
+    const state: SavedState = { tiles, score, hasWon, keepPlaying, gridSize };
     localStorage.setItem(SAVE_KEY, JSON.stringify(state));
-  }, [tiles, score, hasWon, keepPlaying]);
+  }, [tiles, score, hasWon, keepPlaying, gridSize]);
 
   useEffect(() => {
     if (score > bestScore) {
@@ -92,11 +102,11 @@ function App() {
   const handleMove = useCallback(
     (direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT') => {
       if (gameOver || (hasWon && !keepPlaying)) return;
-      const { tiles: newTiles, score: addedScore, changed } = move(tiles, direction);
+      const { tiles: newTiles, score: addedScore, changed } = move(tiles, direction, gridSize);
       if (changed) {
         // Save snapshot for undo before committing the new state
         setUndoSnapshot({ tiles, score });
-        const tilesWithNewTile = addRandomTile(newTiles);
+        const tilesWithNewTile = addRandomTile(newTiles, gridSize);
         setTiles(tilesWithNewTile);
         setScore((prev) => prev + addedScore);
         if (addedScore > 0) {
@@ -127,12 +137,12 @@ function App() {
         if (!keepPlaying && tilesWithNewTile.some((t) => !t.isDestroyed && t.value >= 2048)) {
           setHasWon(true);
         }
-        if (isGameOver(tilesWithNewTile)) {
+        if (isGameOver(tilesWithNewTile, gridSize)) {
           setGameOver(true);
         }
       }
     },
-    [tiles, gameOver, hasWon, keepPlaying, stats]
+    [tiles, gameOver, hasWon, keepPlaying, stats, gridSize]
   );
 
   const handleKeyDown = useCallback(
@@ -181,20 +191,27 @@ function App() {
     setTouchStart(null);
   };
 
-  const resetGame = () => {
+  const resetGame = (size: GridSize = gridSize) => {
     localStorage.removeItem(SAVE_KEY);
+    localStorage.setItem(SIZE_KEY, String(size));
     setUndoSnapshot(null);
     setStats((prev) => {
       const next = { ...prev, gamesPlayed: prev.gamesPlayed + 1 };
       saveStats(next);
       return next;
     });
-    setTiles(initGame());
+    setTiles(initGame(size));
     setScore(0);
     setGameOver(false);
     setHasWon(false);
     setKeepPlaying(false);
     setParticles([]);
+    setMilestoneBanner(null);
+  };
+
+  const handleSizeChange = (newSize: GridSize) => {
+    setGridSize(newSize);
+    resetGame(newSize);
   };
 
   const removeBurst = useCallback((id: number) => {
@@ -212,6 +229,9 @@ function App() {
   undoRef.current = handleUndo;
 
   const sortedTiles = [...tiles].sort((a, b) => a.id - b.id);
+  const gridCells = Array.from({ length: gridSize }, (_, r) =>
+    Array.from({ length: gridSize }, (_, c) => ({ r, c }))
+  ).flat();
 
   const highestTile = Math.max(
     2,
@@ -223,6 +243,11 @@ function App() {
   return (
     <div
       className="container"
+      style={{
+        '--grid-size': gridSize,
+        '--cell-size': `calc((var(--board-size) - var(--cell-gap) * ${gridSize + 1}) / ${gridSize})`,
+        '--cell-step': `calc((var(--board-size) - var(--cell-gap) * ${gridSize + 1}) / ${gridSize} + var(--cell-gap))`,
+      } as React.CSSProperties}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
@@ -259,6 +284,18 @@ function App() {
           <button className="stats-button" onClick={() => setStatsOpen((o) => !o)} aria-label="Stats">
             {statsOpen ? 'Hide Stats' : 'Stats'}
           </button>
+          <div className="size-selector" role="group" aria-label="Board size">
+            {SIZES.map((s) => (
+              <button
+                key={s}
+                className={`size-btn${gridSize === s ? ' size-btn-active' : ''}`}
+                onClick={() => handleSizeChange(s)}
+                aria-pressed={gridSize === s}
+              >
+                {s}×{s}
+              </button>
+            ))}
+          </div>
           <button
             className="undo-button"
             onClick={handleUndo}
@@ -322,11 +359,9 @@ function App() {
           </div>
         )}
         <div className="grid-container">
-          {[0, 1, 2, 3].map((r) =>
-            [0, 1, 2, 3].map((c) => (
-              <div key={`${r}-${c}`} className="grid-cell" />
-            ))
-          )}
+          {gridCells.map(({ r, c }) => (
+            <div key={`${r}-${c}`} className="grid-cell" />
+          ))}
           {sortedTiles.map((tile) => (
             <div
               key={tile.id}

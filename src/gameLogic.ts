@@ -13,17 +13,17 @@ export const GRID_SIZE = 4;
 let nextId = 0;
 export const getNextId = () => nextId++;
 
-export const initGame = (): Tile[] => {
+export const initGame = (gridSize = GRID_SIZE): Tile[] => {
   let tiles: Tile[] = [];
-  tiles = addRandomTile(tiles);
-  tiles = addRandomTile(tiles);
+  tiles = addRandomTile(tiles, gridSize);
+  tiles = addRandomTile(tiles, gridSize);
   return tiles;
 };
 
-export const addRandomTile = (tiles: Tile[]): Tile[] => {
+export const addRandomTile = (tiles: Tile[], gridSize = GRID_SIZE): Tile[] => {
   const emptyCells = [];
-  for (let r = 0; r < GRID_SIZE; r++) {
-    for (let c = 0; c < GRID_SIZE; c++) {
+  for (let r = 0; r < gridSize; r++) {
+    for (let c = 0; c < gridSize; c++) {
       if (!tiles.some((t) => !t.isDestroyed && t.r === r && t.c === c)) {
         emptyCells.push({ r, c });
       }
@@ -47,7 +47,8 @@ export const addRandomTile = (tiles: Tile[]): Tile[] => {
 
 export const move = (
   tiles: Tile[],
-  direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT'
+  direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT',
+  gridSize = GRID_SIZE
 ): { tiles: Tile[]; score: number; changed: boolean } => {
   // 1. Filter out previously destroyed and clear flags
   let activeTiles: Tile[] = tiles
@@ -61,13 +62,13 @@ export const move = (
   const isVertical = direction === 'UP' || direction === 'DOWN';
   const isForward = direction === 'RIGHT' || direction === 'DOWN';
 
-  for (let primary = 0; primary < GRID_SIZE; primary++) {
+  for (let primary = 0; primary < gridSize; primary++) {
     let line = activeTiles.filter((t) => (isVertical ? t.c === primary : t.r === primary));
     line.sort((a, b) => (isVertical ? a.r - b.r : a.c - b.c));
 
     if (isForward) line.reverse();
 
-    let writeIndex = isForward ? GRID_SIZE - 1 : 0;
+    let writeIndex = isForward ? gridSize - 1 : 0;
     let previous: Tile | null = null;
 
     for (const tile of line) {
@@ -110,15 +111,15 @@ export const move = (
   return { tiles: nextTiles, score, changed };
 };
 
-export const isGameOver = (tiles: Tile[]): boolean => {
+export const isGameOver = (tiles: Tile[], gridSize = GRID_SIZE): boolean => {
   const active = tiles.filter((t) => !t.isDestroyed);
-  if (active.length < GRID_SIZE * GRID_SIZE) return false;
+  if (active.length < gridSize * gridSize) return false;
 
   const directions: ('UP' | 'DOWN' | 'LEFT' | 'RIGHT')[] = ['UP', 'DOWN', 'LEFT', 'RIGHT'];
   for (const dir of directions) {
-    const { changed } = move(active, dir);
+    const { changed } = move(active, dir, gridSize);
     if (changed) return false;
   }
-  
+
   return true;
 };
