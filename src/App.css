@@ -958,6 +958,63 @@ h1 {
   text-align: center;
 }
 
+/* ── Leaderboard ──────────────────────────────────────── */
+
+.leaderboard {
+  grid-column: 1 / -1;
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.leaderboard-title {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+
+.leaderboard-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 7px 10px;
+  border-radius: 7px;
+  margin-bottom: 5px;
+  background: var(--cell-empty);
+  border: 1px solid transparent;
+  transition: background 150ms;
+}
+
+.leaderboard-row:last-child {
+  margin-bottom: 0;
+}
+
+.leaderboard-row-active {
+  background: var(--btn-bg-hover);
+  border-color: var(--btn-border);
+}
+
+.leaderboard-size {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
+
+.leaderboard-row-active .leaderboard-size {
+  color: var(--text);
+}
+
+.leaderboard-score {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+
 /* ── Responsive ───────────────────────────────────────── */
 
 /* Progress label overflows the board edge on narrow screens */

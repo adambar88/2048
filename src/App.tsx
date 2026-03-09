@@ -6,9 +6,11 @@ const SAVE_KEY = '2048-save';
 const STATS_KEY = '2048-stats';
 const THEME_KEY = '2048-theme';
 const SIZE_KEY = '2048-size';
+const BEST_SCORES_KEY = '2048-best-scores';
 
 const SIZES = [3, 4, 5] as const;
 type GridSize = (typeof SIZES)[number];
+type BestScores = Record<GridSize, number>;
 
 interface Stats {
   gamesPlayed: number;
@@ -27,6 +29,18 @@ function loadStats(): Stats {
 
 function saveStats(s: Stats) {
   localStorage.setItem(STATS_KEY, JSON.stringify(s));
+}
+
+function loadBestScores(): BestScores {
+  try {
+    const raw = localStorage.getItem(BEST_SCORES_KEY);
+    if (raw) return JSON.parse(raw) as BestScores;
+    // Migrate legacy single best score to the 4×4 slot
+    const legacy = parseInt(localStorage.getItem('2048-best') ?? '0', 10);
+    return { 3: 0, 4: legacy, 5: 0 };
+  } catch {
+    return { 3: 0, 4: 0, 5: 0 };
+  }
 }
 
 interface SavedState {
@@ -56,9 +70,7 @@ function App() {
 
   const [tiles, setTiles] = useState<Tile[]>(() => saved?.tiles ?? initGame(gridSize));
   const [score, setScore] = useState(() => saved?.score ?? 0);
-  const [bestScore, setBestScore] = useState<number>(() =>
-    parseInt(localStorage.getItem('2048-best') ?? '0', 10)
-  );
+  const [bestScores, setBestScores] = useState<BestScores>(loadBestScores);
   const [gameOver, setGameOver] = useState(() =>
     saved ? isGameOver(saved.tiles, saved.gridSize ?? 4) : false
   );
@@ -93,11 +105,14 @@ function App() {
   }, [tiles, score, hasWon, keepPlaying, gridSize]);
 
   useEffect(() => {
-    if (score > bestScore) {
-      setBestScore(score);
-      localStorage.setItem('2048-best', String(score));
+    if (score > (bestScores[gridSize] ?? 0)) {
+      setBestScores((prev) => {
+        const next = { ...prev, [gridSize]: score };
+        localStorage.setItem(BEST_SCORES_KEY, JSON.stringify(next));
+        return next;
+      });
     }
-  }, [score, bestScore]);
+  }, [score, bestScores, gridSize]);
 
   const handleMove = useCallback(
     (direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT') => {
@@ -269,7 +284,7 @@ function App() {
           </div>
           <div className="score-container">
             <div className="score-label">BEST</div>
-            <div className="score-value">{bestScore}</div>
+            <div className="score-value">{bestScores[gridSize]}</div>
           </div>
         </div>
       </div>
@@ -394,6 +409,18 @@ function App() {
           <div className="stat-item">
             <span className="stat-value">{stats.highestTileEver}</span>
             <span className="stat-label">Best tile ever</span>
+          </div>
+          <div className="leaderboard">
+            <div className="leaderboard-title">High Scores</div>
+            {SIZES.map((s) => (
+              <div
+                key={s}
+                className={`leaderboard-row${s === gridSize ? ' leaderboard-row-active' : ''}`}
+              >
+                <span className="leaderboard-size">{s}×{s}</span>
+                <span className="leaderboard-score">{(bestScores[s] ?? 0).toLocaleString()}</span>
+              </div>
+            ))}
           </div>
         </div>
       )}
