@@ -415,7 +415,7 @@ function App() {
             <>
               <div className="score-container">
                 <div className="score-label">TARGET</div>
-                <div className="score-value challenge-target-val">{challengeTarget}</div>
+                <div className="score-value">{challengeTarget}</div>
               </div>
               <div className={`score-container${timeWarning ? ' score-container-warn' : ''}`}>
                 <div className="score-label">TIME</div>
@@ -456,49 +456,45 @@ function App() {
             : <>Join the numbers and get to the <strong>2048 tile!</strong></>}
         </p>
         <div className="intro-buttons">
-          <div className="btn-row">
-            <button className="theme-button" onClick={() => setIsDark((d) => !d)} aria-label="Toggle theme" title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}>
-              {isDark ? 'Light' : 'Dark'}
-            </button>
-            <button className="stats-button" onClick={() => setStatsOpen((o) => !o)} aria-label="Stats" disabled={isChallenge}>
-              {statsOpen ? 'Hide Stats' : 'Stats'}
-            </button>
-            <div className="size-selector" role="group" aria-label="Board size">
-              {SIZES.map((s) => (
-                <button
-                  key={s}
-                  className={`size-btn${gridSize === s ? ' size-btn-active' : ''}`}
-                  onClick={() => handleSizeChange(s)}
-                  aria-pressed={gridSize === s}
-                  disabled={isChallenge}
-                >
-                  {s}×{s}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="btn-row">
-            {isChallenge ? (
-              <button className="challenge-exit-button" onClick={exitChallenge}>
-                Exit Challenge
+          <button className="theme-button" onClick={() => setIsDark((d) => !d)} aria-label="Toggle theme" title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}>
+            {isDark ? 'Light' : 'Dark'}
+          </button>
+          <div className="size-selector" role="group" aria-label="Board size">
+            {SIZES.map((s) => (
+              <button
+                key={s}
+                className={`size-btn${gridSize === s ? ' size-btn-active' : ''}`}
+                onClick={() => handleSizeChange(s)}
+                aria-pressed={gridSize === s}
+                disabled={isChallenge}
+              >
+                {s}×{s}
               </button>
-            ) : (
-              <button className="challenge-button" onClick={startChallenge}>
-                Challenge
-              </button>
-            )}
-            <button
-              className="undo-button"
-              onClick={handleUndo}
-              disabled={!undoSnapshot || gameOver || isChallenge}
-              title="Undo last move (Ctrl+Z)"
-            >
-              Undo
-            </button>
-            <button className="restart-button" onClick={() => resetGame()}>
-              {isChallenge ? 'Restart' : 'New Game'}
-            </button>
+            ))}
           </div>
+          <button className="stats-button" onClick={() => setStatsOpen((o) => !o)} aria-label="Stats" disabled={isChallenge}>
+            {statsOpen ? 'Hide Stats' : 'Stats'}
+          </button>
+          <button
+            className="undo-button"
+            onClick={handleUndo}
+            disabled={!undoSnapshot || gameOver || isChallenge}
+            title="Undo last move (Ctrl+Z)"
+          >
+            Undo
+          </button>
+          <button className="restart-button" onClick={() => resetGame()}>
+            New Game
+          </button>
+          {isChallenge ? (
+            <button className="challenge-exit-button" onClick={exitChallenge}>
+              Exit Challenge
+            </button>
+          ) : (
+            <button className="challenge-button" onClick={startChallenge}>
+              Challenge
+            </button>
+          )}
         </div>
       </div>
       <div className={`game-container${gameOver ? ' game-over-shake' : ''}`}>

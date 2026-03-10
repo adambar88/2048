@@ -778,14 +778,8 @@ h1 {
 /* ── Stats drawer ─────────────────────────────────────── */
 
 .intro-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 100%;
-}
-
-.btn-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 8px;
   width: 100%;
 }
@@ -793,7 +787,9 @@ h1 {
 .theme-button,
 .stats-button,
 .undo-button,
-.restart-button {
+.restart-button,
+.challenge-button,
+.challenge-exit-button {
   flex: 1;
   background: var(--btn-bg);
   border: 1px solid var(--btn-border);
@@ -810,12 +806,14 @@ h1 {
   line-height: 1;
   white-space: nowrap;
   text-align: center;
+  overflow: hidden;
 }
 
 .theme-button:hover,
 .stats-button:hover,
 .undo-button:hover:not(:disabled),
-.restart-button:hover {
+.restart-button:hover,
+.challenge-exit-button:hover {
   background: var(--btn-bg-hover);
   transform: translateY(-1px);
 }
@@ -823,7 +821,8 @@ h1 {
 .theme-button:active,
 .stats-button:active,
 .undo-button:active:not(:disabled),
-.restart-button:active {
+.restart-button:active,
+.challenge-exit-button:active {
   transform: translateY(0);
 }
 
@@ -835,6 +834,7 @@ h1 {
 .size-selector {
   display: flex;
   gap: 4px;
+  flex: 1;
 }
 
 .size-btn {
@@ -873,22 +873,10 @@ h1 {
 /* ── Challenge mode ──────────────────────────────────── */
 
 .challenge-button {
-  flex: 1;
   background: linear-gradient(135deg, #7c3aed, #6d28d9);
-  border: 1px solid rgba(167, 139, 250, 0.4);
-  border-radius: 8px;
+  border-color: rgba(167, 139, 250, 0.4);
   color: #fff;
-  font-size: 13px;
-  font-weight: 600;
-  font-family: inherit;
-  letter-spacing: 0.04em;
-  padding: 0 8px;
-  height: 36px;
-  cursor: pointer;
   transition: opacity 150ms, transform 130ms;
-  white-space: nowrap;
-  text-align: center;
-  line-height: 1;
   box-shadow: 0 0 14px rgba(124, 58, 237, 0.45);
 }
 
@@ -902,38 +890,19 @@ h1 {
 }
 
 .challenge-exit-button {
-  flex: 1;
-  background: var(--btn-bg);
-  border: 1px solid rgba(239, 68, 68, 0.4);
-  border-radius: 8px;
+  border-color: rgba(239, 68, 68, 0.4);
   color: #ef4444;
-  font-size: 13px;
-  font-weight: 600;
-  font-family: inherit;
-  letter-spacing: 0.04em;
-  padding: 0 8px;
-  height: 36px;
-  cursor: pointer;
-  transition: background 150ms, transform 130ms;
-  white-space: nowrap;
-  text-align: center;
-  line-height: 1;
 }
 
-.challenge-exit-button:hover {
-  background: rgba(239, 68, 68, 0.1);
-  transform: translateY(-1px);
+[data-theme="light"] .challenge-button {
+  background: linear-gradient(135deg, #f8a824, #e07b10);
+  border-color: rgba(248, 168, 36, 0.5);
+  box-shadow: 0 0 14px rgba(248, 168, 36, 0.45);
 }
 
-.challenge-exit-button:active {
-  transform: translateY(0);
-}
-
-.challenge-target-val {
-  background: linear-gradient(135deg, #a78bfa, #7c3aed);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+[data-theme="light"] .challenge-exit-button {
+  border-color: rgba(220, 38, 38, 0.4);
+  color: #dc2626;
 }
 
 .score-container-warn {
@@ -1251,10 +1220,6 @@ h1 {
     gap: 6px;
   }
 
-  .btn-row {
-    gap: 6px;
-  }
-
   .game-message p {
     font-size: 38px;
   }
@@ -1281,14 +1246,12 @@ h1 {
     gap: 5px;
   }
 
-  .btn-row {
-    gap: 5px;
-  }
-
   .theme-button,
   .stats-button,
   .undo-button,
-  .restart-button {
+  .restart-button,
+  .challenge-button,
+  .challenge-exit-button {
     font-size: 11px;
     padding: 0 6px;
     height: 32px;
