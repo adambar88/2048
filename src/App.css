@@ -191,6 +191,11 @@ h1 {
   gap: 8px;
 }
 
+.scores-wrapper--challenge .score-container {
+  padding: 10px 10px;
+  min-width: 56px;
+}
+
 .score-container {
   position: relative;
   background: var(--board-bg);
@@ -774,8 +779,14 @@ h1 {
 
 .intro-buttons {
   display: flex;
+  flex-direction: column;
   gap: 8px;
-  align-items: center;
+  width: 100%;
+}
+
+.btn-row {
+  display: flex;
+  gap: 8px;
   width: 100%;
 }
 
@@ -857,6 +868,148 @@ h1 {
 .size-btn-active {
   background: var(--btn-bg-hover);
   border-color: var(--text-dim);
+}
+
+/* ── Challenge mode ──────────────────────────────────── */
+
+.challenge-button {
+  flex: 1;
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  border: 1px solid rgba(167, 139, 250, 0.4);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  letter-spacing: 0.04em;
+  padding: 0 8px;
+  height: 36px;
+  cursor: pointer;
+  transition: opacity 150ms, transform 130ms;
+  white-space: nowrap;
+  text-align: center;
+  line-height: 1;
+  box-shadow: 0 0 14px rgba(124, 58, 237, 0.45);
+}
+
+.challenge-button:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
+}
+
+.challenge-button:active {
+  transform: translateY(0);
+}
+
+.challenge-exit-button {
+  flex: 1;
+  background: var(--btn-bg);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 8px;
+  color: #ef4444;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  letter-spacing: 0.04em;
+  padding: 0 8px;
+  height: 36px;
+  cursor: pointer;
+  transition: background 150ms, transform 130ms;
+  white-space: nowrap;
+  text-align: center;
+  line-height: 1;
+}
+
+.challenge-exit-button:hover {
+  background: rgba(239, 68, 68, 0.1);
+  transform: translateY(-1px);
+}
+
+.challenge-exit-button:active {
+  transform: translateY(0);
+}
+
+.challenge-target-val {
+  background: linear-gradient(135deg, #a78bfa, #7c3aed);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.score-container-warn {
+  animation: warn-pulse 600ms ease-in-out infinite alternate;
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+@keyframes warn-pulse {
+  from { border-color: rgba(239, 68, 68, 0.3); }
+  to   { border-color: rgba(239, 68, 68, 0.9); box-shadow: 0 0 10px rgba(239, 68, 68, 0.4); }
+}
+
+.challenge-timer-track {
+  position: relative;
+  margin-top: 14px;
+  height: 6px;
+  background: var(--cell-empty);
+  border-radius: 99px;
+  overflow: visible;
+}
+
+.challenge-timer-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #7c3aed 0%, #a78bfa 60%, #f6c90e 100%);
+  box-shadow: 0 0 10px rgba(167, 139, 250, 0.6);
+  transition: width 900ms linear;
+}
+
+.challenge-timer-warn .challenge-timer-fill {
+  background: linear-gradient(90deg, #dc2626, #ef4444);
+  box-shadow: 0 0 14px rgba(239, 68, 68, 0.7);
+  animation: bar-glow-red 600ms ease-in-out infinite alternate;
+}
+
+@keyframes bar-glow-red {
+  from { box-shadow: 0 0 8px rgba(239, 68, 68, 0.5); }
+  to   { box-shadow: 0 0 20px rgba(239, 68, 68, 1.0); }
+}
+
+.challenge-timer-label {
+  position: absolute;
+  top: 12px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 2px;
+}
+
+.challenge-step {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--text-dim);
+  opacity: 0.5;
+  letter-spacing: 0;
+}
+
+.challenge-step.current {
+  color: #a78bfa;
+  opacity: 1;
+  font-size: 10px;
+}
+
+.challenge-step.done {
+  color: var(--text);
+  opacity: 0.8;
+}
+
+.leaderboard-row-challenge {
+  background: rgba(124, 58, 237, 0.08);
+  border-color: rgba(124, 58, 237, 0.25);
+}
+
+.leaderboard-row-challenge .leaderboard-size {
+  color: #a78bfa;
 }
 
 /* ── Milestone banner ─────────────────────────────── */
@@ -1015,6 +1168,29 @@ h1 {
   letter-spacing: -0.02em;
 }
 
+.leaderboard-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.leaderboard-tile-badge {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-dim);
+  background: var(--cell-empty);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 2px 7px;
+  letter-spacing: 0;
+  min-width: 36px;
+  text-align: center;
+}
+
+.leaderboard-row-active .leaderboard-tile-badge {
+  color: var(--text);
+}
+
 /* ── Responsive ───────────────────────────────────────── */
 
 /* Progress label overflows the board edge on narrow screens */
@@ -1064,6 +1240,10 @@ h1 {
     gap: 6px;
   }
 
+  .btn-row {
+    gap: 6px;
+  }
+
   .game-message p {
     font-size: 38px;
   }
@@ -1087,6 +1267,10 @@ h1 {
   }
 
   .intro-buttons {
+    gap: 5px;
+  }
+
+  .btn-row {
     gap: 5px;
   }
 

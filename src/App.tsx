@@ -2,15 +2,59 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import './App.css';
 import { Tile, initGame, move, addRandomTile, isGameOver } from './gameLogic';
 
+// Counts a displayed number up (or down) to `target` over `duration` ms.
+function useAnimatedValue(target: number, duration = 350): number {
+  const [displayed, setDisplayed] = useState(target);
+  const displayedRef = useRef(target);
+  const frameRef = useRef(0);
+
+  useEffect(() => {
+    const from = displayedRef.current;
+    if (from === target) return;
+    cancelAnimationFrame(frameRef.current);
+    let start: number | null = null;
+    const animate = (now: number) => {
+      if (start === null) start = now;
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+      const value = Math.round(from + (target - from) * eased);
+      displayedRef.current = value;
+      setDisplayed(value);
+      if (progress < 1) frameRef.current = requestAnimationFrame(animate);
+    };
+    frameRef.current = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frameRef.current);
+  }, [target, duration]);
+
+  return displayed;
+}
+
 const SAVE_KEY = '2048-save';
 const STATS_KEY = '2048-stats';
 const THEME_KEY = '2048-theme';
 const SIZE_KEY = '2048-size';
 const BEST_SCORES_KEY = '2048-best-scores';
+const BEST_TILES_KEY = '2048-best-tiles';
+const CHALLENGE_BEST_KEY = '2048-challenge-best';
 
 const SIZES = [3, 4, 5] as const;
 type GridSize = (typeof SIZES)[number];
 type BestScores = Record<GridSize, number>;
+type BestTiles = Record<GridSize, number>;
+
+// Challenge mode: targets starting from 16, time budgets per level (seconds)
+const CHALLENGE_TARGETS = [16, 32, 64, 128, 256, 512, 1024, 2048] as const;
+const CHALLENGE_TIMES: Record<number, number> = {
+  16: 30,
+  32: 40,
+  64: 50,
+  128: 60,
+  256: 75,
+  512: 90,
+  1024: 120,
+  2048: 150,
+};
+type ChallengeStatus = 'idle' | 'running' | 'won' | 'lost';
 
 interface Stats {
   gamesPlayed: number;
@@ -38,6 +82,15 @@ function loadBestScores(): BestScores {
     // Migrate legacy single best score to the 4×4 slot
     const legacy = parseInt(localStorage.getItem('2048-best') ?? '0', 10);
     return { 3: 0, 4: legacy, 5: 0 };
+  } catch {
+    return { 3: 0, 4: 0, 5: 0 };
+  }
+}
+
+function loadBestTiles(): BestTiles {
+  try {
+    const raw = localStorage.getItem(BEST_TILES_KEY);
+    return raw ? (JSON.parse(raw) as BestTiles) : { 3: 0, 4: 0, 5: 0 };
   } catch {
     return { 3: 0, 4: 0, 5: 0 };
   }
@@ -71,6 +124,7 @@ function App() {
   const [tiles, setTiles] = useState<Tile[]>(() => saved?.tiles ?? initGame(gridSize));
   const [score, setScore] = useState(() => saved?.score ?? 0);
   const [bestScores, setBestScores] = useState<BestScores>(loadBestScores);
+  const [bestTiles, setBestTiles] = useState<BestTiles>(loadBestTiles);
   const [gameOver, setGameOver] = useState(() =>
     saved ? isGameOver(saved.tiles, saved.gridSize ?? 4) : false
   );
@@ -92,6 +146,16 @@ function App() {
     return dark;
   });
 
+  // ── Challenge mode state ──────────────────────────────
+  const [challengeStatus, setChallengeStatus] = useState<ChallengeStatus>('idle');
+  const [challengeLevel, setChallengeLevel] = useState(0); // index into CHALLENGE_TARGETS
+  const [challengeTimeLeft, setChallengeTimeLeft] = useState(0);
+  const [challengeBest, setChallengeBest] = useState<number>(
+    () => parseInt(localStorage.getItem(CHALLENGE_BEST_KEY) ?? '0', 10)
+  );
+  const challengeStatusRef = useRef<ChallengeStatus>('idle');
+  challengeStatusRef.current = challengeStatus;
+
   // Sync theme attribute and persist preference
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
@@ -100,9 +164,10 @@ function App() {
 
   // Persist game state after every move
   useEffect(() => {
+    if (challengeStatus !== 'idle') return; // don't persist during challenge
     const state: SavedState = { tiles, score, hasWon, keepPlaying, gridSize };
     localStorage.setItem(SAVE_KEY, JSON.stringify(state));
-  }, [tiles, score, hasWon, keepPlaying, gridSize]);
+  }, [tiles, score, hasWon, keepPlaying, gridSize, challengeStatus]);
 
   useEffect(() => {
     if (score > (bestScores[gridSize] ?? 0)) {
@@ -113,6 +178,21 @@ function App() {
       });
     }
   }, [score, bestScores, gridSize]);
+
+  // ── Challenge countdown timer ─────────────────────────
+  useEffect(() => {
+    if (challengeStatus !== 'running') return;
+    if (challengeTimeLeft <= 0) {
+      setChallengeStatus('lost');
+      return;
+    }
+    const id = window.setTimeout(() => {
+      if (challengeStatusRef.current === 'running') {
+        setChallengeTimeLeft((t) => t - 1);
+      }
+    }, 1000);
+    return () => clearTimeout(id);
+  }, [challengeStatus, challengeTimeLeft]);
 
   const handleMove = useCallback(
     (direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT') => {
@@ -138,6 +218,13 @@ function App() {
               milestoneKeyRef.current += 1;
               setMilestoneBanner({ value: newHighest, key: milestoneKeyRef.current });
             }
+            if (newHighest > (bestTiles[gridSize] ?? 0)) {
+              setBestTiles((prev) => {
+                const next = { ...prev, [gridSize]: newHighest };
+                localStorage.setItem(BEST_TILES_KEY, JSON.stringify(next));
+                return next;
+              });
+            }
             setStats((prev) => {
               const next = {
                 ...prev,
@@ -155,10 +242,54 @@ function App() {
         if (isGameOver(tilesWithNewTile, gridSize)) {
           setGameOver(true);
         }
+        // ── Challenge: check if target tile reached ──
+        if (challengeStatusRef.current === 'running') {
+          const target = CHALLENGE_TARGETS[challengeLevel];
+          const reached = tilesWithNewTile.some((t) => !t.isDestroyed && t.value >= target);
+          if (reached) {
+            const nextLevel = challengeLevel + 1;
+            if (nextLevel >= CHALLENGE_TARGETS.length) {
+              // Completed all levels!
+              setChallengeStatus('won');
+              if (nextLevel > challengeBest) {
+                setChallengeBest(nextLevel);
+                localStorage.setItem(CHALLENGE_BEST_KEY, String(nextLevel));
+              }
+            } else {
+              const newBest = Math.max(nextLevel, challengeBest);
+              if (newBest > challengeBest) {
+                setChallengeBest(newBest);
+                localStorage.setItem(CHALLENGE_BEST_KEY, String(newBest));
+              }
+              setChallengeLevel(nextLevel);
+              setChallengeTimeLeft(CHALLENGE_TIMES[CHALLENGE_TARGETS[nextLevel]]);
+            }
+          }
+        }
       }
     },
-    [tiles, gameOver, hasWon, keepPlaying, stats, gridSize]
+    [tiles, gameOver, hasWon, keepPlaying, stats, gridSize, bestTiles, challengeLevel, challengeBest]
   );
+
+  const startChallenge = () => {
+    localStorage.removeItem(SAVE_KEY);
+    setUndoSnapshot(null);
+    setGridSize(4);
+    setTiles(initGame(4));
+    setScore(0);
+    setGameOver(false);
+    setHasWon(false);
+    setKeepPlaying(false);
+    setParticles([]);
+    setMilestoneBanner(null);
+    setChallengeLevel(0);
+    setChallengeTimeLeft(CHALLENGE_TIMES[CHALLENGE_TARGETS[0]]);
+    setChallengeStatus('running');
+  };
+
+  const exitChallenge = () => {
+    setChallengeStatus('idle');
+  };
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
@@ -207,6 +338,7 @@ function App() {
   };
 
   const resetGame = (size: GridSize = gridSize) => {
+    if (challengeStatus !== 'idle') setChallengeStatus('idle');
     localStorage.removeItem(SAVE_KEY);
     localStorage.setItem(SIZE_KEY, String(size));
     setUndoSnapshot(null);
@@ -248,6 +380,16 @@ function App() {
     Array.from({ length: gridSize }, (_, c) => ({ r, c }))
   ).flat();
 
+  const displayedScore = useAnimatedValue(score);
+  const displayedBest = useAnimatedValue(bestScores[gridSize]);
+
+  const isChallenge = challengeStatus !== 'idle';
+  const challengeTarget = CHALLENGE_TARGETS[challengeLevel];
+  const timePct = isChallenge
+    ? (challengeTimeLeft / CHALLENGE_TIMES[challengeTarget]) * 100
+    : 0;
+  const timeWarning = isChallenge && challengeTimeLeft <= 10;
+
   const highestTile = Math.max(
     2,
     ...tiles.filter((t) => !t.isDestroyed).map((t) => t.value)
@@ -268,60 +410,95 @@ function App() {
     >
       <div className="header">
         <h1>2048</h1>
-        <div className="scores-wrapper">
-          <div className="score-container">
-            <div className="score-label">SCORE</div>
-            <div className="score-value">{score}</div>
-            {scoreDelta && (
-              <span
-                key={scoreDelta.key}
-                className="score-delta"
-                onAnimationEnd={() => setScoreDelta(null)}
-              >
-                +{scoreDelta.value}
-              </span>
-            )}
-          </div>
-          <div className="score-container">
-            <div className="score-label">BEST</div>
-            <div className="score-value">{bestScores[gridSize]}</div>
-          </div>
+        <div className={isChallenge ? 'scores-wrapper scores-wrapper--challenge' : 'scores-wrapper'}>
+          {isChallenge ? (
+            <>
+              <div className="score-container">
+                <div className="score-label">TARGET</div>
+                <div className="score-value challenge-target-val">{challengeTarget}</div>
+              </div>
+              <div className={`score-container${timeWarning ? ' score-container-warn' : ''}`}>
+                <div className="score-label">TIME</div>
+                <div className="score-value">{challengeTimeLeft}s</div>
+              </div>
+              <div className="score-container">
+                <div className="score-label">LEVEL</div>
+                <div className="score-value">{challengeLevel + 1}/{CHALLENGE_TARGETS.length}</div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="score-container">
+                <div className="score-label">SCORE</div>
+                <div className="score-value">{displayedScore.toLocaleString()}</div>
+                {scoreDelta && (
+                  <span
+                    key={scoreDelta.key}
+                    className="score-delta"
+                    onAnimationEnd={() => setScoreDelta(null)}
+                  >
+                    +{scoreDelta.value}
+                  </span>
+                )}
+              </div>
+              <div className="score-container">
+                <div className="score-label">BEST</div>
+                <div className="score-value">{displayedBest.toLocaleString()}</div>
+              </div>
+            </>
+          )}
         </div>
       </div>
       <div className="game-intro">
         <p className="game-explanation">
-          Join the numbers and get to the <strong>2048 tile!</strong>
+          {isChallenge
+            ? <><strong>Challenge:</strong> reach <strong>{challengeTarget}</strong> before time runs out!</>
+            : <>Join the numbers and get to the <strong>2048 tile!</strong></>}
         </p>
         <div className="intro-buttons">
-          <button className="theme-button" onClick={() => setIsDark((d) => !d)} aria-label="Toggle theme" title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}>
-            {isDark ? 'Light' : 'Dark'}
-          </button>
-          <button className="stats-button" onClick={() => setStatsOpen((o) => !o)} aria-label="Stats">
-            {statsOpen ? 'Hide Stats' : 'Stats'}
-          </button>
-          <div className="size-selector" role="group" aria-label="Board size">
-            {SIZES.map((s) => (
-              <button
-                key={s}
-                className={`size-btn${gridSize === s ? ' size-btn-active' : ''}`}
-                onClick={() => handleSizeChange(s)}
-                aria-pressed={gridSize === s}
-              >
-                {s}×{s}
-              </button>
-            ))}
+          <div className="btn-row">
+            <button className="theme-button" onClick={() => setIsDark((d) => !d)} aria-label="Toggle theme" title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}>
+              {isDark ? 'Light' : 'Dark'}
+            </button>
+            <button className="stats-button" onClick={() => setStatsOpen((o) => !o)} aria-label="Stats" disabled={isChallenge}>
+              {statsOpen ? 'Hide Stats' : 'Stats'}
+            </button>
+            <div className="size-selector" role="group" aria-label="Board size">
+              {SIZES.map((s) => (
+                <button
+                  key={s}
+                  className={`size-btn${gridSize === s ? ' size-btn-active' : ''}`}
+                  onClick={() => handleSizeChange(s)}
+                  aria-pressed={gridSize === s}
+                  disabled={isChallenge}
+                >
+                  {s}×{s}
+                </button>
+              ))}
+            </div>
           </div>
-          <button
-            className="undo-button"
-            onClick={handleUndo}
-            disabled={!undoSnapshot || gameOver}
-            title="Undo last move (Ctrl+Z)"
-          >
-            Undo
-          </button>
-          <button className="restart-button" onClick={() => resetGame()}>
-            New Game
-          </button>
+          <div className="btn-row">
+            {isChallenge ? (
+              <button className="challenge-exit-button" onClick={exitChallenge}>
+                Exit Challenge
+              </button>
+            ) : (
+              <button className="challenge-button" onClick={startChallenge}>
+                Challenge
+              </button>
+            )}
+            <button
+              className="undo-button"
+              onClick={handleUndo}
+              disabled={!undoSnapshot || gameOver || isChallenge}
+              title="Undo last move (Ctrl+Z)"
+            >
+              Undo
+            </button>
+            <button className="restart-button" onClick={() => resetGame()}>
+              {isChallenge ? 'Restart' : 'New Game'}
+            </button>
+          </div>
         </div>
       </div>
       <div className={`game-container${gameOver ? ' game-over-shake' : ''}`}>
@@ -332,6 +509,34 @@ function App() {
             <div className="lower">
               <button className="retry-button" onClick={() => resetGame()}>
                 Try again
+              </button>
+            </div>
+          </div>
+        )}
+        {challengeStatus === 'lost' && (
+          <div className="game-message game-over">
+            <p>Time's up!</p>
+            <span className="sub-text">You reached level {challengeLevel + 1} — target was {challengeTarget}</span>
+            <div className="lower">
+              <button className="keep-playing-button" onClick={startChallenge}>
+                Try again
+              </button>
+              <button className="retry-button" onClick={exitChallenge}>
+                Exit
+              </button>
+            </div>
+          </div>
+        )}
+        {challengeStatus === 'won' && (
+          <div className="game-message game-won">
+            <p>Champion!</p>
+            <span className="sub-text">You beat all 8 levels! 🏆</span>
+            <div className="lower">
+              <button className="keep-playing-button" onClick={startChallenge}>
+                Again
+              </button>
+              <button className="retry-button" onClick={exitChallenge}>
+                Exit
               </button>
             </div>
           </div>
@@ -418,21 +623,50 @@ function App() {
                 className={`leaderboard-row${s === gridSize ? ' leaderboard-row-active' : ''}`}
               >
                 <span className="leaderboard-size">{s}×{s}</span>
-                <span className="leaderboard-score">{(bestScores[s] ?? 0).toLocaleString()}</span>
+                <span className="leaderboard-right">
+                  <span className="leaderboard-tile-badge">{bestTiles[s] > 0 ? bestTiles[s] : '—'}</span>
+                  <span className="leaderboard-score">{(bestScores[s] ?? 0).toLocaleString()}</span>
+                </span>
               </div>
             ))}
+            {challengeBest > 0 && (
+              <div className="leaderboard-row leaderboard-row-challenge">
+                <span className="leaderboard-size">⚡ Challenge</span>
+                <span className="leaderboard-right">
+                  <span className="leaderboard-tile-badge">{CHALLENGE_TARGETS[Math.min(challengeBest, CHALLENGE_TARGETS.length) - 1]}</span>
+                  <span className="leaderboard-score">Lvl {challengeBest}</span>
+                </span>
+              </div>
+            )}
           </div>
         </div>
       )}
-      <div className="progress-track" title={`Best tile: ${highestTile}`}>
-        <div
-          className={`progress-fill${highestTile >= 2048 ? ' progress-win' : ''}`}
-          style={{ width: `${progressPct}%` }}
-        />
-        <span className="progress-label">
-          {highestTile >= 2048 ? '🏆 2048!' : highestTile}
-        </span>
-      </div>
+      {isChallenge && (
+        <div className={`challenge-timer-track${timeWarning ? ' challenge-timer-warn' : ''}`}>
+          <div
+            className="challenge-timer-fill"
+            style={{ width: `${timePct}%` }}
+          />
+          <span className="challenge-timer-label">
+            {CHALLENGE_TARGETS.map((t, i) => (
+              <span key={t} className={`challenge-step${
+                i < challengeLevel ? ' done' : i === challengeLevel ? ' current' : ''
+              }`}>{t}</span>
+            ))}
+          </span>
+        </div>
+      )}
+      {!isChallenge && (
+        <div className="progress-track" title={`Best tile: ${highestTile}`}>
+          <div
+            className={`progress-fill${highestTile >= 2048 ? ' progress-win' : ''}`}
+            style={{ width: `${progressPct}%` }}
+          />
+          <span className="progress-label">
+            {highestTile >= 2048 ? '🏆 2048!' : highestTile}
+          </span>
+        </div>
+      )}
     </div>
   );
 }
