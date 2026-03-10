@@ -649,9 +649,8 @@ function App() {
           />
           <span className="challenge-timer-label">
             {CHALLENGE_TARGETS.map((t, i) => (
-              <span key={t} className={`challenge-step${
-                i < challengeLevel ? ' done' : i === challengeLevel ? ' current' : ''
-              }`}>{t}</span>
+              <span key={t} className={`challenge-step${i < challengeLevel ? ' done' : i === challengeLevel ? ' current' : ''
+                }`}>{t}</span>
             ))}
           </span>
         </div>

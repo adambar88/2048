@@ -942,8 +942,14 @@ h1 {
 }
 
 @keyframes warn-pulse {
-  from { border-color: rgba(239, 68, 68, 0.3); }
-  to   { border-color: rgba(239, 68, 68, 0.9); box-shadow: 0 0 10px rgba(239, 68, 68, 0.4); }
+  from {
+    border-color: rgba(239, 68, 68, 0.3);
+  }
+
+  to {
+    border-color: rgba(239, 68, 68, 0.9);
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+  }
 }
 
 .challenge-timer-track {
@@ -970,8 +976,13 @@ h1 {
 }
 
 @keyframes bar-glow-red {
-  from { box-shadow: 0 0 8px rgba(239, 68, 68, 0.5); }
-  to   { box-shadow: 0 0 20px rgba(239, 68, 68, 1.0); }
+  from {
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+  }
+
+  to {
+    box-shadow: 0 0 20px rgba(239, 68, 68, 1.0);
+  }
 }
 
 .challenge-timer-label {
