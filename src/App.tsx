@@ -565,15 +565,6 @@ function App() {
             ))}
           </div>
         ))}
-        {milestoneBanner && (
-          <div
-            key={milestoneBanner.key}
-            className="milestone-banner"
-            onAnimationEnd={() => setMilestoneBanner(null)}
-          >
-            🔥 NEW BEST TILE: {milestoneBanner.value}!
-          </div>
-        )}
         <div className="grid-container">
           {gridCells.map(({ r, c }) => (
             <div key={`${r}-${c}`} className="grid-cell" />
