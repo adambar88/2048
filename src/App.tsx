@@ -138,8 +138,6 @@ function App() {
   const [statsOpen, setStatsOpen] = useState(false);
   const [undoSnapshot, setUndoSnapshot] = useState<{ tiles: Tile[]; score: number } | null>(null);
   const undoRef = useRef<() => void>(() => { });
-  const [milestoneBanner, setMilestoneBanner] = useState<{ value: number; key: number } | null>(null);
-  const milestoneKeyRef = useRef(0);
   const [isDark, setIsDark] = useState(() => {
     const dark = localStorage.getItem(THEME_KEY) !== 'light';
     document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
@@ -214,10 +212,6 @@ function App() {
               ...merged.map((t) => ({ id: particleIdRef.current++, r: t.r, c: t.c })),
             ]);
             const newHighest = Math.max(...tilesWithNewTile.filter((t) => !t.isDestroyed).map((t) => t.value));
-            if (newHighest > stats.highestTileEver) {
-              milestoneKeyRef.current += 1;
-              setMilestoneBanner({ value: newHighest, key: milestoneKeyRef.current });
-            }
             if (newHighest > (bestTiles[gridSize] ?? 0)) {
               setBestTiles((prev) => {
                 const next = { ...prev, [gridSize]: newHighest };
@@ -281,7 +275,6 @@ function App() {
     setHasWon(false);
     setKeepPlaying(false);
     setParticles([]);
-    setMilestoneBanner(null);
     setChallengeLevel(0);
     setChallengeTimeLeft(CHALLENGE_TIMES[CHALLENGE_TARGETS[0]]);
     setChallengeStatus('running');
@@ -353,7 +346,6 @@ function App() {
     setHasWon(false);
     setKeepPlaying(false);
     setParticles([]);
-    setMilestoneBanner(null);
   };
 
   const handleSizeChange = (newSize: GridSize) => {
