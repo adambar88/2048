@@ -42,6 +42,31 @@ type GridSize = (typeof SIZES)[number];
 type BestScores = Record<GridSize, number>;
 type BestTiles = Record<GridSize, number>;
 
+// Safe localStorage wrapper to prevent crashes when disabled or unavailable
+const storage = {
+  getItem: (key: string): string | null => {
+    try {
+      return typeof window !== 'undefined' ? window.localStorage.getItem(key) : null;
+    } catch {
+      return null;
+    }
+  },
+  setItem: (key: string, value: string): void => {
+    try {
+      if (typeof window !== 'undefined') window.localStorage.setItem(key, value);
+    } catch {
+      // Ignore
+    }
+  },
+  removeItem: (key: string): void => {
+    try {
+      if (typeof window !== 'undefined') window.localStorage.removeItem(key);
+    } catch {
+      // Ignore
+    }
+  }
+};
+
 // Challenge mode: targets starting from 16, time budgets per level (seconds)
 const CHALLENGE_TARGETS = [16, 32, 64, 128, 256, 512, 1024, 2048] as const;
 const CHALLENGE_TIMES: Record<number, number> = {
@@ -64,7 +89,7 @@ interface Stats {
 
 function loadStats(): Stats {
   try {
-    const raw = localStorage.getItem(STATS_KEY);
+    const raw = storage.getItem(STATS_KEY);
     return raw ? (JSON.parse(raw) as Stats) : { gamesPlayed: 0, totalMerges: 0, highestTileEver: 2 };
   } catch {
     return { gamesPlayed: 0, totalMerges: 0, highestTileEver: 2 };
@@ -72,15 +97,15 @@ function loadStats(): Stats {
 }
 
 function saveStats(s: Stats) {
-  localStorage.setItem(STATS_KEY, JSON.stringify(s));
+  storage.setItem(STATS_KEY, JSON.stringify(s));
 }
 
 function loadBestScores(): BestScores {
   try {
-    const raw = localStorage.getItem(BEST_SCORES_KEY);
+    const raw = storage.getItem(BEST_SCORES_KEY);
     if (raw) return JSON.parse(raw) as BestScores;
     // Migrate legacy single best score to the 4×4 slot
-    const legacy = parseInt(localStorage.getItem('2048-best') ?? '0', 10);
+    const legacy = parseInt(storage.getItem('2048-best') ?? '0', 10);
     return { 3: 0, 4: legacy, 5: 0 };
   } catch {
     return { 3: 0, 4: 0, 5: 0 };
@@ -89,7 +114,7 @@ function loadBestScores(): BestScores {
 
 function loadBestTiles(): BestTiles {
   try {
-    const raw = localStorage.getItem(BEST_TILES_KEY);
+    const raw = storage.getItem(BEST_TILES_KEY);
     return raw ? (JSON.parse(raw) as BestTiles) : { 3: 0, 4: 0, 5: 0 };
   } catch {
     return { 3: 0, 4: 0, 5: 0 };
@@ -106,7 +131,7 @@ interface SavedState {
 
 function loadSave(): SavedState | null {
   try {
-    const raw = localStorage.getItem(SAVE_KEY);
+    const raw = storage.getItem(SAVE_KEY);
     return raw ? (JSON.parse(raw) as SavedState) : null;
   } catch {
     return null;
@@ -117,7 +142,7 @@ function App() {
   const saved = loadSave();
 
   const [gridSize, setGridSize] = useState<GridSize>(() => {
-    const stored = parseInt(localStorage.getItem(SIZE_KEY) ?? '4', 10);
+    const stored = parseInt(storage.getItem(SIZE_KEY) ?? '4', 10);
     return (SIZES as readonly number[]).includes(stored) ? (stored as GridSize) : 4;
   });
 
@@ -139,8 +164,10 @@ function App() {
   const [undoSnapshot, setUndoSnapshot] = useState<{ tiles: Tile[]; score: number } | null>(null);
   const undoRef = useRef<() => void>(() => { });
   const [isDark, setIsDark] = useState(() => {
-    const dark = localStorage.getItem(THEME_KEY) !== 'light';
-    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    const dark = storage.getItem(THEME_KEY) !== 'light';
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    }
     return dark;
   });
 
@@ -149,29 +176,31 @@ function App() {
   const [challengeLevel, setChallengeLevel] = useState(0); // index into CHALLENGE_TARGETS
   const [challengeTimeLeft, setChallengeTimeLeft] = useState(0);
   const [challengeBest, setChallengeBest] = useState<number>(
-    () => parseInt(localStorage.getItem(CHALLENGE_BEST_KEY) ?? '0', 10)
+    () => parseInt(storage.getItem(CHALLENGE_BEST_KEY) ?? '0', 10)
   );
   const challengeStatusRef = useRef<ChallengeStatus>('idle');
   challengeStatusRef.current = challengeStatus;
 
   // Sync theme attribute and persist preference
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
-    localStorage.setItem(THEME_KEY, isDark ? 'dark' : 'light');
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+    }
+    storage.setItem(THEME_KEY, isDark ? 'dark' : 'light');
   }, [isDark]);
 
   // Persist game state after every move
   useEffect(() => {
     if (challengeStatus !== 'idle') return; // don't persist during challenge
     const state: SavedState = { tiles, score, hasWon, keepPlaying, gridSize };
-    localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+    storage.setItem(SAVE_KEY, JSON.stringify(state));
   }, [tiles, score, hasWon, keepPlaying, gridSize, challengeStatus]);
 
   useEffect(() => {
     if (score > (bestScores[gridSize] ?? 0)) {
       setBestScores((prev) => {
         const next = { ...prev, [gridSize]: score };
-        localStorage.setItem(BEST_SCORES_KEY, JSON.stringify(next));
+        storage.setItem(BEST_SCORES_KEY, JSON.stringify(next));
         return next;
       });
     }
@@ -215,7 +244,7 @@ function App() {
             if (newHighest > (bestTiles[gridSize] ?? 0)) {
               setBestTiles((prev) => {
                 const next = { ...prev, [gridSize]: newHighest };
-                localStorage.setItem(BEST_TILES_KEY, JSON.stringify(next));
+                storage.setItem(BEST_TILES_KEY, JSON.stringify(next));
                 return next;
               });
             }
@@ -247,13 +276,13 @@ function App() {
               setChallengeStatus('won');
               if (nextLevel > challengeBest) {
                 setChallengeBest(nextLevel);
-                localStorage.setItem(CHALLENGE_BEST_KEY, String(nextLevel));
+                storage.setItem(CHALLENGE_BEST_KEY, String(nextLevel));
               }
             } else {
               const newBest = Math.max(nextLevel, challengeBest);
               if (newBest > challengeBest) {
                 setChallengeBest(newBest);
-                localStorage.setItem(CHALLENGE_BEST_KEY, String(newBest));
+                storage.setItem(CHALLENGE_BEST_KEY, String(newBest));
               }
               setChallengeLevel(nextLevel);
               setChallengeTimeLeft(CHALLENGE_TIMES[CHALLENGE_TARGETS[nextLevel]]);
@@ -266,7 +295,7 @@ function App() {
   );
 
   const startChallenge = () => {
-    localStorage.removeItem(SAVE_KEY);
+    storage.removeItem(SAVE_KEY);
     setUndoSnapshot(null);
     setGridSize(4);
     setTiles(initGame(4));
@@ -332,8 +361,8 @@ function App() {
 
   const resetGame = (size: GridSize = gridSize) => {
     if (challengeStatus !== 'idle') setChallengeStatus('idle');
-    localStorage.removeItem(SAVE_KEY);
-    localStorage.setItem(SIZE_KEY, String(size));
+    storage.removeItem(SAVE_KEY);
+    storage.setItem(SIZE_KEY, String(size));
     setUndoSnapshot(null);
     setStats((prev) => {
       const next = { ...prev, gamesPlayed: prev.gamesPlayed + 1 };
