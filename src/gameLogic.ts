@@ -74,16 +74,19 @@ export const move = (
     for (const tile of line) {
       if (previous && previous.value === tile.value && !previous.isDestroyed) {
         // Merge!
-        tile.r = isVertical ? writeIndex + (isForward ? 1 : -1) : primary;
-        tile.c = isVertical ? primary : writeIndex + (isForward ? 1 : -1);
+        const targetR = isVertical ? writeIndex + (isForward ? 1 : -1) : primary;
+        const targetC = isVertical ? primary : writeIndex + (isForward ? 1 : -1);
+
+        tile.r = targetR;
+        tile.c = targetC;
         tile.isDestroyed = true;
         previous.isDestroyed = true;
 
         const mergedTile: Tile = {
           id: getNextId(),
           value: tile.value * 2,
-          r: tile.r,
-          c: tile.c,
+          r: targetR,
+          c: targetC,
           isMerged: true,
         };
         nextTiles.push(mergedTile);
