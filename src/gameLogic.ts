@@ -37,7 +37,7 @@ export const addRandomTile = (tiles: Tile[], gridSize = GRID_SIZE): Tile[] => {
     ...tiles,
     {
       id: getNextId(),
-      value: Math.random() < 0.9 ? 2 : 4,
+      value: 2,
       r: cell.r,
       c: cell.c,
       isNew: true,
