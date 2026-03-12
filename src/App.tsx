@@ -410,12 +410,6 @@ function App() {
     ? (challengeTimeLeft / CHALLENGE_TIMES[challengeTarget]) * 100
     : 0;
   const timeWarning = isChallenge && challengeTimeLeft <= 10;
-
-  const highestTile = Math.max(
-    2,
-    ...tiles.filter((t) => !t.isDestroyed).map((t) => t.value)
-  );
-
   return (
     <div
       className="container"
