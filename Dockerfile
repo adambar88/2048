@@ -12,12 +12,21 @@ RUN npm run build
 # Production stage
 FROM nginx:stable-alpine
 
-# Create directory for the app to be served from the /2048 subpath
+# Remove default content and config
+RUN rm -rf /usr/share/nginx/html/*
+
+# Copy dist to /2048 subpath (for non-stripped proxy)
 RUN mkdir -p /usr/share/nginx/html/2048
 COPY --from=build /app/dist /usr/share/nginx/html/2048
 
-# Custom nginx config if needed
-# COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Also copy dist to root (for stripped proxy)
+COPY --from=build /app/dist /usr/share/nginx/html
+
+# Verify both locations have files
+RUN echo "=== Files at /2048 ===" && ls -la /usr/share/nginx/html/2048/assets/ \
+ && echo "=== Files at root ===" && ls -la /usr/share/nginx/html/assets/
+
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 
