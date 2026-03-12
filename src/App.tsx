@@ -415,8 +415,6 @@ function App() {
     2,
     ...tiles.filter((t) => !t.isDestroyed).map((t) => t.value)
   );
-  // log2(2)=1 … log2(2048)=11; clamp to [0,100]
-  const progressPct = Math.min(100, (Math.log2(highestTile) / 11) * 100);
 
   return (
     <div
@@ -660,17 +658,6 @@ function App() {
               <span key={t} className={`challenge-step${i < challengeLevel ? ' done' : i === challengeLevel ? ' current' : ''
                 }`}>{t}</span>
             ))}
-          </span>
-        </div>
-      )}
-      {!isChallenge && (
-        <div className="progress-track" title={`Best tile: ${highestTile}`}>
-          <div
-            className={`progress-fill${highestTile >= 2048 ? ' progress-win' : ''}`}
-            style={{ width: `${progressPct}%` }}
-          />
-          <span className="progress-label">
-            {highestTile >= 2048 ? '🏆 2048!' : highestTile}
           </span>
         </div>
       )}
