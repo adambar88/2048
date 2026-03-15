@@ -31,7 +31,8 @@ function useAnimatedValue(target: number, duration = 350): number {
 
 const SAVE_KEY = '2048-save';
 const STATS_KEY = '2048-stats';
-const THEME_KEY = '2048-theme';
+const THEME_KEY = 'barczynski-theme';
+const COLOR_KEY = '2048-color';
 const SIZE_KEY = '2048-size';
 const BEST_SCORES_KEY = '2048-best-scores';
 const BEST_TILES_KEY = '2048-best-tiles';
@@ -161,14 +162,29 @@ function App() {
   const particleIdRef = useRef(0);
   const [stats, setStats] = useState<Stats>(loadStats);
   const [statsOpen, setStatsOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const [undoSnapshot, setUndoSnapshot] = useState<{ tiles: Tile[]; score: number } | null>(null);
   const undoRef = useRef<() => void>(() => { });
   const [isDark, setIsDark] = useState(() => {
-    const dark = storage.getItem(THEME_KEY) !== 'light';
+    const urlTheme = new URLSearchParams(window.location.search).get('theme') as 'dark' | 'light' | null;
+    if (urlTheme === 'dark' || urlTheme === 'light') {
+      storage.setItem(THEME_KEY, urlTheme);
+      const url = new URL(window.location.href);
+      url.searchParams.delete('theme');
+      window.history.replaceState({}, '', url.toString());
+    }
+    const dark = (storage.getItem(THEME_KEY) ?? 'dark') !== 'light';
     if (typeof document !== 'undefined') {
       document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
     }
     return dark;
+  });
+  const [isColored, setIsColored] = useState(() => {
+    const colored = storage.getItem(COLOR_KEY) === 'on';
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-color', colored ? 'on' : 'off');
+    }
+    return colored;
   });
 
   // ── Challenge mode state ──────────────────────────────
@@ -188,6 +204,13 @@ function App() {
     }
     storage.setItem(THEME_KEY, isDark ? 'dark' : 'light');
   }, [isDark]);
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-color', isColored ? 'on' : 'off');
+    }
+    storage.setItem(COLOR_KEY, isColored ? 'on' : 'off');
+  }, [isColored]);
 
   // Persist game state after every move
   useEffect(() => {
@@ -421,8 +444,29 @@ function App() {
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
+      <button
+        className="theme-btn"
+        onClick={() => setIsDark((d) => !d)}
+        aria-label="Toggle theme"
+        title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+      >
+        {isDark ? (
+          <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        ) : (
+          <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        )}
+      </button>
       <div className="header">
         <h1>2048</h1>
+        <button
+          className="help-btn"
+          onClick={() => setHelpOpen((o) => !o)}
+          aria-label="How to play"
+          title="How to play"
+        >
+          <span className="help-btn-icon">?</span>
+          <span className="help-btn-label">How to play</span>
+        </button>
         <div className={isChallenge ? 'scores-wrapper scores-wrapper--challenge' : 'scores-wrapper'}>
           {isChallenge ? (
             <>
@@ -463,14 +507,9 @@ function App() {
         </div>
       </div>
       <div className="game-intro">
-        <p className="game-explanation">
-          {isChallenge
-            ? <><strong>Challenge:</strong> reach <strong>{challengeTarget}</strong> before time runs out!</>
-            : <>Join the numbers and get to the <strong>2048 tile!</strong></>}
-        </p>
         <div className="intro-buttons">
-          <button className="theme-button" onClick={() => setIsDark((d) => !d)} aria-label="Toggle theme" title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}>
-            {isDark ? 'Light' : 'Dark'}
+          <button className="theme-button" onClick={() => setIsColored((c) => !c)} aria-label="Toggle tile colors" title={isColored ? 'Switch to monochrome tiles' : 'Switch to color tiles'}>
+            {isColored ? 'Mono' : 'Color'}
           </button>
           <div className="size-selector" role="group" aria-label="Board size">
             {SIZES.map((s) => (
@@ -601,43 +640,86 @@ function App() {
           ))}
         </div>
       </div>
+      {helpOpen && (
+        <div className="help-overlay" onClick={() => setHelpOpen(false)} role="dialog" aria-modal="true" aria-label="How to play">
+          <div className="help-panel" onClick={(e) => e.stopPropagation()}>
+            <button className="help-close" onClick={() => setHelpOpen(false)} aria-label="Close">×</button>
+            <h2 className="help-title">How to play</h2>
+            <div className="help-section">
+              <h3>Basics</h3>
+              <p>Use <strong>arrow keys</strong> (or swipe on mobile) to slide all tiles. When two tiles with the same number collide, they merge into one. Reach the <strong>2048</strong> tile to win — but keep going as long as you like.</p>
+            </div>
+            <div className="help-section">
+              <h3>Grid sizes</h3>
+              <p><strong>3×3</strong> is fast and tight. <strong>4×4</strong> is the classic. <strong>5×5</strong> gives more room to manoeuvre.</p>
+            </div>
+            <div className="help-section">
+              <h3>Controls</h3>
+              <ul>
+                <li><strong>Arrow keys</strong> — move tiles</li>
+                <li><strong>Swipe</strong> — move tiles on touch devices</li>
+                <li><strong>Ctrl / ⌘ + Z</strong> — undo last move</li>
+                <li><strong>New Game</strong> — start fresh</li>
+              </ul>
+            </div>
+            <div className="help-section">
+              <h3>Challenge mode</h3>
+              <p>Hit <strong>Challenge</strong> to race through a series of targets — reach 16, then 32, 64… up to 2048 — each with its own countdown. Fail to hit the target in time and it&apos;s over.</p>
+            </div>
+            <div className="help-section">
+              <h3>Tile colours</h3>
+              <p>Toggle between <strong>Mono</strong> (greyscale) and <strong>Color</strong> (classic 2048 palette) using the Color button.</p>
+            </div>
+            <div className="help-section">
+              <h3>Stats</h3>
+              <p>Open <strong>Stats</strong> to see your games played, total merges, best tile ever, and high scores per grid size.</p>
+            </div>
+          </div>
+        </div>
+      )}
       {statsOpen && (
-        <div className="stats-drawer">
-          <div className="stat-item">
-            <span className="stat-value">{stats.gamesPlayed}</span>
-            <span className="stat-label">Games played</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-value">{stats.totalMerges.toLocaleString()}</span>
-            <span className="stat-label">Total merges</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-value">{stats.highestTileEver}</span>
-            <span className="stat-label">Best tile ever</span>
-          </div>
-          <div className="leaderboard">
-            <div className="leaderboard-title">High Scores</div>
-            {SIZES.map((s) => (
-              <div
-                key={s}
-                className={`leaderboard-row${s === gridSize ? ' leaderboard-row-active' : ''}`}
-              >
-                <span className="leaderboard-size">{s}×{s}</span>
-                <span className="leaderboard-right">
-                  <span className="leaderboard-tile-badge">{bestTiles[s] > 0 ? bestTiles[s] : '—'}</span>
-                  <span className="leaderboard-score">{(bestScores[s] ?? 0).toLocaleString()}</span>
-                </span>
+        <div className="help-overlay" onClick={() => setStatsOpen(false)} role="dialog" aria-modal="true" aria-label="Stats">
+          <div className="help-panel" onClick={(e) => e.stopPropagation()}>
+            <button className="help-close" onClick={() => setStatsOpen(false)} aria-label="Close">×</button>
+            <h2 className="help-title">Stats</h2>
+            <div className="stats-row">
+              <div className="stat-item">
+                <span className="stat-value">{stats.gamesPlayed}</span>
+                <span className="stat-label">Games played</span>
               </div>
-            ))}
-            {challengeBest > 0 && (
-              <div className="leaderboard-row leaderboard-row-challenge">
-                <span className="leaderboard-size">⚡ Challenge</span>
-                <span className="leaderboard-right">
-                  <span className="leaderboard-tile-badge">{CHALLENGE_TARGETS[Math.min(challengeBest, CHALLENGE_TARGETS.length) - 1]}</span>
-                  <span className="leaderboard-score">Lvl {challengeBest}</span>
-                </span>
+              <div className="stat-item">
+                <span className="stat-value">{stats.totalMerges.toLocaleString()}</span>
+                <span className="stat-label">Total merges</span>
               </div>
-            )}
+              <div className="stat-item">
+                <span className="stat-value">{stats.highestTileEver}</span>
+                <span className="stat-label">Best tile ever</span>
+              </div>
+            </div>
+            <div className="leaderboard">
+              <div className="leaderboard-title">High Scores</div>
+              {SIZES.map((s) => (
+                <div
+                  key={s}
+                  className={`leaderboard-row${s === gridSize ? ' leaderboard-row-active' : ''}`}
+                >
+                  <span className="leaderboard-size">{s}×{s}</span>
+                  <span className="leaderboard-right">
+                    <span className="leaderboard-tile-badge">{bestTiles[s] > 0 ? bestTiles[s] : '—'}</span>
+                    <span className="leaderboard-score">{(bestScores[s] ?? 0).toLocaleString()}</span>
+                  </span>
+                </div>
+              ))}
+              {challengeBest > 0 && (
+                <div className="leaderboard-row leaderboard-row-challenge">
+                  <span className="leaderboard-size">⚡ Challenge</span>
+                  <span className="leaderboard-right">
+                    <span className="leaderboard-tile-badge">{CHALLENGE_TARGETS[Math.min(challengeBest, CHALLENGE_TARGETS.length) - 1]}</span>
+                    <span className="leaderboard-score">Lvl {challengeBest}</span>
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
