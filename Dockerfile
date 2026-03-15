@@ -15,6 +15,9 @@ FROM nginx:stable-alpine
 # Remove default content and config
 RUN rm -rf /usr/share/nginx/html/*
 
+# Install wget for health checks
+RUN apk add --no-cache wget
+
 # Copy dist to /2048 subpath (for non-stripped proxy)
 RUN mkdir -p /usr/share/nginx/html/2048
 COPY --from=build /app/dist /usr/share/nginx/html/2048
