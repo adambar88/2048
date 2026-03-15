@@ -4,7 +4,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>2048</title>
+  <title>2048 — barczynski.dev</title>
+  <meta name="description" content="Feature-rich 2048 sliding puzzle game with multiple grid sizes, challenge mode, and statistics. Built with React.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://apps.barczynski.dev/2048">
+  <meta property="og:title" content="2048 — barczynski.dev">
+  <meta property="og:description" content="Feature-rich 2048 sliding puzzle game with multiple grid sizes, challenge mode, and statistics. Built with React.">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="2048 — barczynski.dev">
+  <meta name="twitter:description" content="Feature-rich 2048 sliding puzzle game with multiple grid sizes, challenge mode, and statistics. Built with React.">
   <link rel="icon" type="image/svg+xml" href="./favicon.svg">
   <link rel="manifest" href="./manifest.json">
   <meta name="theme-color" content="#050505">
@@ -12,8 +20,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="2048">
   <link rel="apple-touch-icon" href="./favicon.svg">
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
-    rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     .back-link {
       position: fixed;
@@ -23,7 +32,7 @@
       align-items: center;
       gap: 8px;
       text-decoration: none;
-      color: #555;
+      color: #767676;
       font-family: 'Space Grotesk', sans-serif;
       font-size: 12px;
       z-index: 999;
@@ -51,6 +60,18 @@
       color: #fff;
       font-family: 'Space Grotesk', sans-serif;
       letter-spacing: -0.5px;
+    }
+
+    /* Focus ring */
+    :focus-visible {
+      outline: 2px solid #767676;
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+
+    /* Selection colour */
+    ::selection {
+      background: rgba(255, 255, 255, 0.18);
     }
 
     /* Cross-document View Transitions (Chrome 126+, graceful fallback) */
@@ -83,6 +104,7 @@
 </head>
 
 <body>
+  <a href="#main" id="skip-link" style="position:absolute;top:-100px;left:0.5rem;z-index:1000;padding:8px 16px;background:#050505;border:1px solid #767676;border-radius:6px;color:#fff;font-size:0.875rem;text-decoration:none;font-family:'Space Grotesk',sans-serif" onfocus="this.style.top='0.5rem'" onblur="this.style.top='-100px'">Skip to content</a>
   <a href="/apps/" class="back-link">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
       stroke-linecap="round" stroke-linejoin="round">
@@ -90,7 +112,7 @@
     </svg>
     apps.barczynski.dev
   </a>
-  <div id="root"></div>
+  <div id="root" role="main"></div>
   <script type="module" src="/src/main.tsx"></script>
 </body>
 
