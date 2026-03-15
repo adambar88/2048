@@ -1,8 +1,14 @@
 node_modules
 dist
 .git
+.gitignore
 .vscode
+*.md
+*.log
+.env*
 Dockerfile
+Dockerfile.*
 .dockerignore
-README.md
-instructions.md
+testAll.ts
+testGaps.ts
+testLeft.ts
