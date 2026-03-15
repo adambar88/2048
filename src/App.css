@@ -13,7 +13,7 @@
   --cell-empty: rgba(255, 255, 255, 0.04);
   --border: #1a1a1a;
   --text: #fff;
-  --text-dim: #555;
+  --text-dim: #767676;
   --overlay-bg: rgba(5, 5, 5, 0.88);
   --milestone-bg: rgba(5, 5, 5, 0.92);
   --theme-btn-hover: rgba(255, 255, 255, 0.05);
@@ -802,14 +802,17 @@ h1 {
   background: none;
   border: none;
   cursor: pointer;
-  padding: 6px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 10px 13px;
   display: flex;
   align-items: center;
+  justify-content: center;
   color: var(--text-dim);
   transition: color 0.2s;
   position: fixed;
-  top: 1rem;
-  right: 1rem;
+  top: 0.625rem;
+  right: 0.625rem;
   z-index: 50;
 }
 
@@ -1209,6 +1212,9 @@ h1 {
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   color: var(--text-dim);
   margin: 0 0 6px;
 }
@@ -1432,5 +1438,45 @@ h1 {
     font-size: 11px;
     padding: 0 6px;
     height: 32px;
+  }
+}
+
+/* ── Reduced motion ───────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  @view-transition { navigation: none; }
+
+  .tile {
+    transition: none;
+  }
+
+  .tile-new {
+    animation: none;
+  }
+
+  .game-over-shake {
+    animation: none;
+  }
+
+  .tile-2048 {
+    animation: none;
+  }
+
+  .score-delta {
+    animation: none;
+    display: none;
+  }
+
+  .tile-merge-burst,
+  .burst-particle {
+    animation: none;
+  }
+
+  .help-overlay {
+    animation: none;
+  }
+
+  .warn-timer {
+    animation: none;
   }
 }

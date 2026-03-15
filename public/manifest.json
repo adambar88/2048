@@ -1,27 +1,30 @@
 {
-  "name": "2048 — barczynski.dev",
-  "short_name": "2048",
-  "description": "The classic sliding puzzle game. Merge tiles to reach 2048 — with multiple grid sizes and a challenge mode.",
-  "start_url": "/2048/",
-  "scope": "/2048/",
-  "display": "standalone",
-  "background_color": "#050505",
-  "theme_color": "#050505",
-  "orientation": "portrait-primary",
-  "categories": ["games", "puzzle"],
-  "icons": [
-    {
-      "src": "/2048/favicon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "Play 2048",
-      "url": "/2048/",
-      "description": "Start a new game"
-    }
-  ]
+    "name": "2048 — barczynski.dev",
+    "short_name": "2048",
+    "description": "The classic sliding puzzle game. Merge tiles to reach 2048 — with multiple grid sizes and a challenge mode.",
+    "start_url": "/2048/",
+    "scope": "/2048/",
+    "display": "standalone",
+    "background_color": "#050505",
+    "theme_color": "#050505",
+    "orientation": "portrait-primary",
+    "categories": [
+        "games",
+        "puzzle"
+    ],
+    "icons": [
+        {
+            "src": "/2048/favicon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Play 2048",
+            "url": "/2048/",
+            "description": "Start a new game"
+        }
+    ]
 }
