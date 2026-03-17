@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { move, isGameOver, addRandomTile, Tile } from './gameLogic'
 
 // ─── helpers ────────────────────────────────────────────
@@ -7,7 +7,7 @@ let _id = 1000
 const id = () => _id++
 
 /** Build a flat tile array from a 2-D value matrix (0 = empty). */
-function board(rows: number[][], gridSize = rows.length): Tile[] {
+function board(rows: number[][]): Tile[] {
   const tiles: Tile[] = []
   for (let r = 0; r < rows.length; r++) {
     for (let c = 0; c < rows[r].length; c++) {
@@ -154,18 +154,18 @@ describe('move – symmetry', () => {
 
 describe('move – 3×3 grid', () => {
   it('merges correctly on a 3×3 board', () => {
-    const t = board([[2, 2, 0], [0, 0, 0], [0, 0, 0]], 3)
+    const t = board([[2, 2, 0], [0, 0, 0], [0, 0, 0]])
     const { tiles } = move(t, 'LEFT', 3)
     expect(toMatrix(tiles, 3)).toEqual([[4, 0, 0], [0, 0, 0], [0, 0, 0]])
   })
 
   it('isGameOver works on full 3×3 with no moves', () => {
-    const t = board([[2, 4, 2], [4, 2, 4], [2, 4, 2]], 3)
+    const t = board([[2, 4, 2], [4, 2, 4], [2, 4, 2]])
     expect(isGameOver(t, 3)).toBe(true)
   })
 
   it('isGameOver false on 3×3 with one empty cell', () => {
-    const t = board([[2, 4, 2], [4, 0, 4], [2, 4, 2]], 3)
+    const t = board([[2, 4, 2], [4, 0, 4], [2, 4, 2]])
     expect(isGameOver(t, 3)).toBe(false)
   })
 })
@@ -174,7 +174,7 @@ describe('move – 3×3 grid', () => {
 
 describe('move – 5×5 grid', () => {
   it('slides and merges across 5 columns', () => {
-    const t = board([[2, 0, 0, 0, 2]], 5)
+    const t = board([[2, 0, 0, 0, 2]])
     const { tiles } = move(t, 'LEFT', 5)
     expect(tiles.filter(x => !x.isDestroyed).find(x => x.value === 4)?.c).toBe(0)
   })
@@ -221,7 +221,7 @@ describe('isGameOver', () => {
   })
 
   it('returns true on single-cell board with one tile', () => {
-    const t = board([[4]], 1)
+    const t = board([[4]])
     expect(isGameOver(t, 1)).toBe(true)
   })
 
