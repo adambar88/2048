@@ -277,8 +277,11 @@ function App() {
         setScore((prev) => prev + addedScore);
         if (addedScore > 0) {
           deltaKey.current += 1;
-          const merged = tilesWithNewTile.filter((t) => t.isMerged);
-          const firstMerged = merged[0];
+          const merged = newTiles.filter((t) => t.isMerged);
+          const firstMerged = merged.reduce<typeof merged[0] | undefined>(
+            (best, t) => (!best || t.value > best.value ? t : best),
+            undefined
+          );
           setScoreDelta({ value: addedScore, key: deltaKey.current, r: firstMerged?.r ?? 0, c: firstMerged?.c ?? 0 });
           if (merged.length > 0) {
             setParticles((prev) => [
