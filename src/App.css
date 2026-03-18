@@ -225,13 +225,16 @@ h1 {
 
 .score-delta {
   position: absolute;
-  top: -6px;
-  right: 6px;
-  font-size: 13px;
+  top: calc(var(--cell-gap) + var(--delta-r, 0) * var(--cell-step));
+  left: calc(var(--cell-gap) + var(--delta-c, 0) * var(--cell-step));
+  width: var(--cell-size);
+  text-align: center;
+  font-size: 14px;
   font-weight: 700;
   color: var(--text);
   pointer-events: none;
   white-space: nowrap;
+  z-index: 50;
   animation: float-up 750ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
@@ -376,8 +379,7 @@ h1 {
 }
 
 .tile-new {
-  animation: appear 190ms cubic-bezier(0.175, 0.885, 0.32, 1.35);
-  animation-fill-mode: backwards;
+  animation: appear 190ms cubic-bezier(0.175, 0.885, 0.32, 1.35) var(--enter-delay, 0ms) backwards;
 }
 
 @keyframes appear {
@@ -578,15 +580,32 @@ h1 {
 @keyframes pop {
   0% {
     transform: translate(calc(var(--c) * var(--cell-step)), calc(var(--r) * var(--cell-step))) scale(1);
+    filter: brightness(1);
   }
 
   45% {
-    transform: translate(calc(var(--c) * var(--cell-step)), calc(var(--r) * var(--cell-step))) scale(1.28);
+    transform: translate(calc(var(--c) * var(--cell-step)), calc(var(--r) * var(--cell-step))) scale(1.22);
+    filter: brightness(1.6);
   }
 
   100% {
     transform: translate(calc(var(--c) * var(--cell-step)), calc(var(--r) * var(--cell-step))) scale(1);
+    filter: brightness(1);
   }
+}
+
+.tile-just-won {
+  animation: win-burst 700ms cubic-bezier(0.175, 0.885, 0.32, 1.35);
+  z-index: 25;
+}
+
+@keyframes win-burst {
+  0%   { transform: translate(calc(var(--c)*var(--cell-step)),calc(var(--r)*var(--cell-step))) scale(1);    filter: brightness(1); }
+  20%  { transform: translate(calc(var(--c)*var(--cell-step)),calc(var(--r)*var(--cell-step))) scale(1.5);  filter: brightness(2); }
+  45%  { transform: translate(calc(var(--c)*var(--cell-step)),calc(var(--r)*var(--cell-step))) scale(1.1);  filter: brightness(1.3); }
+  65%  { transform: translate(calc(var(--c)*var(--cell-step)),calc(var(--r)*var(--cell-step))) scale(1.25); filter: brightness(1.5); }
+  85%  { transform: translate(calc(var(--c)*var(--cell-step)),calc(var(--r)*var(--cell-step))) scale(1.05); filter: brightness(1.1); }
+  100% { transform: translate(calc(var(--c)*var(--cell-step)),calc(var(--r)*var(--cell-step))) scale(1);    filter: brightness(1); }
 }
 
 /* ── Overlay messages ─────────────────────────────────── */
@@ -604,7 +623,7 @@ h1 {
   align-items: center;
   justify-content: center;
   text-align: center;
-  animation: fade-in 400ms ease;
+  animation: overlay-enter 320ms cubic-bezier(0.34, 1.1, 0.64, 1);
 }
 
 .game-message p {
@@ -686,7 +705,33 @@ h1 {
   }
 }
 
-/* ── Particle burst ───────────────────────────────────── */
+@keyframes overlay-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.game-message > p {
+  animation: text-rise 360ms 130ms cubic-bezier(0.34, 1.3, 0.64, 1) backwards;
+}
+
+@keyframes text-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+} ───────────────────────────────────── */
 
 .particle-burst {
   position: absolute;

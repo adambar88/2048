@@ -156,10 +156,13 @@ function App() {
   );
   const [hasWon, setHasWon] = useState(() => saved?.hasWon ?? false);
   const [keepPlaying, setKeepPlaying] = useState(() => saved?.keepPlaying ?? false);
-  const [scoreDelta, setScoreDelta] = useState<{ value: number; key: number } | null>(null);
+  const [scoreDelta, setScoreDelta] = useState<{ value: number; key: number; r: number; c: number } | null>(null);
   const deltaKey = useRef(0);
   const [particles, setParticles] = useState<Array<{ id: number; r: number; c: number }>>([]);
   const particleIdRef = useRef(0);
+  const [wonTileId, setWonTileId] = useState<number | null>(null);
+  const [isEnteringBoard, setIsEnteringBoard] = useState(false);
+  const enterTimerRef = useRef<number>(0);
   const [stats, setStats] = useState<Stats>(loadStats);
   const [statsOpen, setStatsOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -274,8 +277,9 @@ function App() {
         setScore((prev) => prev + addedScore);
         if (addedScore > 0) {
           deltaKey.current += 1;
-          setScoreDelta({ value: addedScore, key: deltaKey.current });
           const merged = tilesWithNewTile.filter((t) => t.isMerged);
+          const firstMerged = merged[0];
+          setScoreDelta({ value: addedScore, key: deltaKey.current, r: firstMerged?.r ?? 0, c: firstMerged?.c ?? 0 });
           if (merged.length > 0) {
             setParticles((prev) => [
               ...prev,
@@ -302,6 +306,15 @@ function App() {
         }
         if (!keepPlaying && tilesWithNewTile.some((t) => !t.isDestroyed && t.value >= 2048)) {
           setHasWon(true);
+          const winTile = tilesWithNewTile.find((t) => !t.isDestroyed && t.value >= 2048);
+          if (winTile) {
+            setWonTileId(winTile.id);
+            window.setTimeout(() => setWonTileId(null), 1300);
+            setParticles((prev) => [
+              ...prev,
+              ...Array.from({ length: 3 }, () => ({ id: particleIdRef.current++, r: winTile.r, c: winTile.c })),
+            ]);
+          }
         }
         if (isGameOver(tilesWithNewTile, gridSize)) {
           setGameOver(true);
@@ -345,6 +358,9 @@ function App() {
     setHasWon(false);
     setKeepPlaying(false);
     setParticles([]);
+    clearTimeout(enterTimerRef.current);
+    setIsEnteringBoard(true);
+    enterTimerRef.current = window.setTimeout(() => setIsEnteringBoard(false), 900);
     setChallengeLevel(0);
     setChallengeTimeLeft(CHALLENGE_TIMES[CHALLENGE_TARGETS[0]]);
     setChallengeStatus('running');
@@ -416,6 +432,9 @@ function App() {
     setHasWon(false);
     setKeepPlaying(false);
     setParticles([]);
+    clearTimeout(enterTimerRef.current);
+    setIsEnteringBoard(true);
+    enterTimerRef.current = window.setTimeout(() => setIsEnteringBoard(false), 900);
   };
 
   const handleSizeChange = (newSize: GridSize) => {
@@ -506,15 +525,6 @@ function App() {
               <div className="score-container">
                 <div className="score-label">SCORE</div>
                 <div className="score-value">{displayedScore.toLocaleString()}</div>
-                {scoreDelta && (
-                  <span
-                    key={scoreDelta.key}
-                    className="score-delta"
-                    onAnimationEnd={() => setScoreDelta(null)}
-                  >
-                    +{scoreDelta.value}
-                  </span>
-                )}
               </div>
               <div className="score-container">
                 <div className="score-label">BEST</div>
@@ -621,6 +631,16 @@ function App() {
             </div>
           </div>
         )}
+        {scoreDelta && (
+          <div
+            key={scoreDelta.key}
+            className="score-delta"
+            style={{ '--delta-r': scoreDelta.r, '--delta-c': scoreDelta.c } as React.CSSProperties}
+            onAnimationEnd={() => setScoreDelta(null)}
+          >
+            +{scoreDelta.value}
+          </div>
+        )}
         {particles.map((burst) => (
           <div
             key={burst.id}
@@ -642,13 +662,20 @@ function App() {
           {sortedTiles.map((tile) => (
             <div
               key={tile.id}
-              style={{ '--r': tile.r, '--c': tile.c } as React.CSSProperties}
+              style={{
+                '--r': tile.r,
+                '--c': tile.c,
+                ...(isEnteringBoard && tile.isNew && !tile.isDestroyed
+                  ? { '--enter-delay': `${(tile.r + tile.c) * 55}ms` }
+                  : {}),
+              } as React.CSSProperties}
               className={[
                 'tile',
                 tile.value <= 2048 ? `tile-${tile.value}` : 'tile-super',
                 tile.isMerged ? 'tile-merged' : '',
                 tile.isNew ? 'tile-new' : '',
                 tile.isDestroyed ? 'tile-destroyed' : '',
+                tile.id === wonTileId ? 'tile-just-won' : '',
               ]
                 .filter(Boolean)
                 .join(' ')}
