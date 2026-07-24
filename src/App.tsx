@@ -1,6 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import './App.css';
 import { Tile, initGame, move, addRandomTile, isGameOver } from './gameLogic';
+import { GameMode } from './gameLogic';
+import { toggleMute, getIsMuted } from './utils/soundEngine';
+import { getBadges, checkAchievements, Badge } from './utils/achievements';
+
 
 // Counts a displayed number up (or down) to `target` over `duration` ms.
 function useAnimatedValue(target: number, duration = 350): number {
@@ -197,6 +201,74 @@ function App() {
   const challengeStatusRef = useRef<ChallengeStatus>('idle');
   challengeStatusRef.current = challengeStatus;
 
+  const [gameMode, setGameMode] = useState<GameMode>(GameMode.CLASSIC);
+  const [blitzTimeLeft, setBlitzTimeLeft] = useState(60000);
+  const [toasts, setToasts] = useState<string[]>([]);
+  const [isMutedState, setIsMutedState] = useState(() => getIsMuted());
+  const [showAchievements, setShowAchievements] = useState(false);
+  const [badges, setBadges] = useState<Badge[]>([]);
+
+  const addToast = useCallback((msg: string) => {
+    setToasts(prev => [...prev, msg]);
+    setTimeout(() => {
+      setToasts(prev => prev.slice(1));
+    }, 3000);
+  }, []);
+
+  useEffect(() => {
+    setBadges(getBadges());
+  }, []);
+
+  useEffect(() => {
+    if (gameMode !== GameMode.BLITZ || gameOver || (hasWon && !keepPlaying)) return;
+    
+    let frame: number;
+    let lastTime = performance.now();
+    
+    const tick = (now: number) => {
+      const delta = now - lastTime;
+      lastTime = now;
+      setBlitzTimeLeft(prev => {
+        const next = prev - delta;
+        if (next <= 0) {
+          setGameOver(true);
+          return 0;
+        }
+        return next;
+      });
+      frame = requestAnimationFrame(tick);
+    };
+    
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [gameMode, gameOver, hasWon, keepPlaying]);
+
+  const handleToggleMute = () => {
+    toggleMute();
+    setIsMutedState(getIsMuted());
+  };
+
+  const getEmojiGrid = () => {
+    let gridStr = '';
+    for(let r=0; r<gridSize; r++) {
+      for(let c=0; c<gridSize; c++) {
+        const tile = tiles.find(t => t.r === r && t.c === c && !t.isDestroyed);
+        if (!tile) gridStr += '⬛';
+        else if (tile.isObstacle) gridStr += '🪨';
+        else if (tile.value >= 2048) gridStr += '🌟';
+        else if (tile.value >= 1024) gridStr += '🟥';
+        else if (tile.value >= 128) gridStr += '🟧';
+        else if (tile.value >= 16) gridStr += '🟨';
+        else gridStr += '🟩';
+      }
+      gridStr += '\n';
+    }
+    navigator.clipboard.writeText(`I scored ${score} in 2048!\n\n${gridStr}`);
+
+    addToast('Copied to clipboard!');
+  };
+
+
   // Sync theme attribute and persist preference
   useEffect(() => {
     if (typeof document !== 'undefined') {
@@ -265,13 +337,33 @@ function App() {
   const handleMove = useCallback(
     (direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT') => {
       if (gameOver || (hasWon && !keepPlaying)) return;
-      const { tiles: newTiles, score: addedScore, changed } = move(tiles, direction, gridSize);
+      const { tiles: newTiles, score: addedScore, changed, timeBonus } = move(tiles, direction, gridSize, gameMode);
       if (changed) {
         // Save snapshot for undo before committing the new state
         setUndoSnapshot({ tiles, score });
-        const tilesWithNewTile = addRandomTile(newTiles, gridSize);
+        const tilesWithNewTile = addRandomTile(newTiles, gridSize, gameMode);
         setTiles(tilesWithNewTile);
         setScore((prev) => prev + addedScore);
+
+        if (gameMode === GameMode.BLITZ && timeBonus) {
+          setBlitzTimeLeft(prev => Math.min(60000, prev + timeBonus * 1000));
+        }
+
+        const prevBadges = getBadges();
+        const nextBadges = checkAchievements({
+          tiles: tilesWithNewTile,
+          score: score + addedScore,
+          hasWon: !keepPlaying && tilesWithNewTile.some((t) => !t.isDestroyed && t.value >= 2048),
+          isGameOver: isGameOver(tilesWithNewTile, gridSize, gameMode)
+        });
+        setBadges(nextBadges);
+        nextBadges.forEach(nb => {
+          const pb = prevBadges.find(b => b.id === nb.id);
+          if (pb && !pb.isUnlocked && nb.isUnlocked) {
+            addToast(`Achievement Unlocked: ${nb.name}`);
+          }
+        });
+
         if (addedScore > 0) {
           deltaKey.current += 1;
           setScoreDelta({ value: addedScore, key: deltaKey.current });
@@ -303,7 +395,7 @@ function App() {
         if (!keepPlaying && tilesWithNewTile.some((t) => !t.isDestroyed && t.value >= 2048)) {
           setHasWon(true);
         }
-        if (isGameOver(tilesWithNewTile, gridSize)) {
+        if (isGameOver(tilesWithNewTile, gridSize, gameMode)) {
           setGameOver(true);
         }
         // ── Challenge: check if target tile reached ──
@@ -401,6 +493,7 @@ function App() {
   };
 
   const resetGame = (size: GridSize = gridSize) => {
+    if (gameMode === GameMode.BLITZ) setBlitzTimeLeft(60000);
     if (challengeStatus !== 'idle') setChallengeStatus('idle');
     storage.removeItem(SAVE_KEY);
     storage.setItem(SIZE_KEY, String(size));
@@ -410,7 +503,7 @@ function App() {
       saveStats(next);
       return next;
     });
-    setTiles(initGame(size));
+    setTiles(initGame(size, gameMode));
     setScore(0);
     setGameOver(false);
     setHasWon(false);
@@ -475,6 +568,53 @@ function App() {
         )}
       </button>
       <div className="header">
+
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
+          <button className="icon-button" onClick={handleToggleMute} aria-label="Toggle Mute" title="Toggle Mute">
+            {isMutedState ? '🔇' : '🔊'}
+          </button>
+          <div style={{ position: 'relative' }}>
+            <button className="icon-button" onClick={() => setShowAchievements(!showAchievements)} title="Achievements">
+              🏆
+            </button>
+            {showAchievements && (
+              <div className="achievements-modal">
+                <h4 style={{margin: '0 0 5px', color: 'var(--text)'}}>Achievements</h4>
+                {badges.map(b => (
+                  <div key={b.id} className={`badge-item ${b.isUnlocked ? 'unlocked' : ''}`}>
+                    <span className="badge-name" style={{color: 'var(--text)'}}>{b.name}</span>
+                    <span className="badge-desc">{b.description}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <select 
+            value={gameMode} 
+            onChange={(e) => {
+              const newMode = e.target.value as GameMode;
+              setGameMode(newMode);
+              setTimeout(() => {
+                storage.removeItem('2048-save');
+                setUndoSnapshot(null);
+                setScore(0);
+                setGameOver(false);
+                setHasWon(false);
+                setKeepPlaying(false);
+                setParticles([]);
+                if (newMode === GameMode.BLITZ) setBlitzTimeLeft(60000);
+                setTiles(initGame(gridSize, newMode));
+              }, 0);
+            }}
+            style={{ padding: '5px', borderRadius: '4px', background: 'var(--btn-bg)', color: 'var(--text)', border: '1px solid var(--btn-border)' }}
+          >
+            <option value={GameMode.CLASSIC}>Classic</option>
+            <option value={GameMode.BLITZ}>Blitz</option>
+            <option value={GameMode.OBSTACLES}>Obstacles</option>
+            <option value={GameMode.FIBONACCI}>Fibonacci</option>
+          </select>
+        </div>
+
         <h1>2048</h1>
         <button
           className="help-btn"
@@ -576,6 +716,11 @@ function App() {
               <button className="retry-button" onClick={() => resetGame()}>
                 Try again
               </button>
+
+              <button className="retry-button" onClick={getEmojiGrid}>
+                Share
+              </button>
+
             </div>
           </div>
         )}
@@ -618,6 +763,11 @@ function App() {
               <button className="retry-button" onClick={() => resetGame()}>
                 New Game
               </button>
+
+              <button className="retry-button" onClick={getEmojiGrid}>
+                Share
+              </button>
+
             </div>
           </div>
         )}
@@ -635,7 +785,14 @@ function App() {
             ))}
           </div>
         ))}
-        <div className="grid-container">
+        
+        {gameMode === GameMode.BLITZ && (
+          <div className="blitz-timer-track">
+            <div className="blitz-timer-fill" style={{ width: `${(blitzTimeLeft / 60000) * 100}%` }} />
+          </div>
+        )}
+
+<div className="grid-container">
           {gridCells.map(({ r, c }) => (
             <div key={`${r}-${c}`} className="grid-cell" />
           ))}
@@ -649,6 +806,7 @@ function App() {
                 tile.isMerged ? 'tile-merged' : '',
                 tile.isNew ? 'tile-new' : '',
                 tile.isDestroyed ? 'tile-destroyed' : '',
+                tile.isObstacle ? 'tile-obstacle' : '',
               ]
                 .filter(Boolean)
                 .join(' ')}
@@ -755,7 +913,11 @@ function App() {
           </span>
         </div>
       )}
-    </div>
+    
+      <div className="toasts-container">
+        {toasts.map((t, i) => <div key={i} className="toast">{t}</div>)}
+      </div>
+</div>
   );
 }
 

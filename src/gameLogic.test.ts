@@ -336,3 +336,50 @@ describe('tile state after move', () => {
         expect(stillMerged.length).toBe(0)
     })
 })
+
+describe('move - FIBONACCI', () => {
+    it('merges 1 and 1 to make 2', () => {
+        const { tiles, score } = move(board([[1, 1, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]), 'LEFT', 4, 'FIBONACCI' as any)
+        expect(toMatrix(tiles, 4)[0]).toEqual([2, 0, 0, 0])
+        expect(score).toBe(2)
+    })
+
+    it('merges 1 and 2 to make 3', () => {
+        const { tiles, score } = move(board([[1, 2, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]), 'LEFT', 4, 'FIBONACCI' as any)
+        expect(toMatrix(tiles, 4)[0]).toEqual([3, 0, 0, 0])
+        expect(score).toBe(3)
+    })
+
+    it('merges 2 and 3 to make 5', () => {
+        const { tiles, score } = move(board([[2, 3, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]), 'LEFT', 4, 'FIBONACCI' as any)
+        expect(toMatrix(tiles, 4)[0]).toEqual([5, 0, 0, 0])
+        expect(score).toBe(5)
+    })
+
+    it('does not merge 2 and 2', () => {
+        const { tiles } = move(board([[2, 2, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]), 'LEFT', 4, 'FIBONACCI' as any)
+        expect(toMatrix(tiles, 4)[0]).toEqual([2, 2, 0, 0])
+    })
+})
+
+describe('move - OBSTACLES', () => {
+    it('blocks movement and does not merge', () => {
+        const t = board([[2, 0, 2, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]])
+        // force 2nd tile to be an obstacle
+        t.push({ id: 999, value: 0, r: 0, c: 1, isObstacle: true })
+        
+        const { tiles } = move(t, 'LEFT', 4, 'OBSTACLES' as any)
+        const mat = toMatrix(tiles, 4)
+        expect(mat[0][0]).toBe(2)
+        expect(mat[0][1]).toBe(0)
+        expect(mat[0][2]).toBe(2)
+    })
+})
+
+describe('move - BLITZ', () => {
+    it('grants timeBonus when merges are >= 32', () => {
+        const { score, timeBonus } = (move as any)(board([[16, 16, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]), 'LEFT', 4, 'BLITZ' as any)
+        expect(score).toBe(32)
+        expect(timeBonus).toBe(1)
+    })
+})
