@@ -92,7 +92,7 @@ export const ReplayModal: React.FC<ReplayModalProps> = ({
           ×
         </button>
 
-        <h2 className="help-title">🎬 Game Replay Scrubber</h2>
+        <h2 className="help-title">Game Replay Scrubber</h2>
 
         {activeSession ? (
           <>
@@ -146,15 +146,15 @@ export const ReplayModal: React.FC<ReplayModalProps> = ({
               }}
             >
               <button className="retry-button" onClick={stepBackward} disabled={currentStep <= 0}>
-                ⏮️ Prev
+                Prev
               </button>
 
               <button className="keep-playing-button" onClick={togglePlay}>
-                {isPlaying ? '⏸️ Pause' : '▶️ Play'}
+                {isPlaying ? 'Pause' : 'Play'}
               </button>
 
               <button className="retry-button" onClick={stepForward} disabled={currentStep >= totalSteps}>
-                Next ⏭️
+                Next
               </button>
 
               <select
@@ -179,7 +179,7 @@ export const ReplayModal: React.FC<ReplayModalProps> = ({
 
             <div style={{ textAlign: 'center', marginBottom: '15px' }}>
               <button className="stats-button" onClick={handleExport}>
-                Export Replay String 📤
+                Export Replay String
               </button>
             </div>
           </>

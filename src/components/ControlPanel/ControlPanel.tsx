@@ -2,52 +2,33 @@ import React from 'react';
 import { GridSize } from '../../types/game';
 
 interface ControlPanelProps {
-  isColored: boolean;
-  onToggleColored: () => void;
   gridSize: GridSize;
   onSizeChange: (size: GridSize) => void;
-  statsOpen: boolean;
-  onToggleStats: () => void;
-  onOpenReplay?: () => void;
-  onOpenShortcuts?: () => void;
   undoDisabled: boolean;
   onUndo: () => void;
   onRestart: () => void;
   isChallenge: boolean;
   onStartChallenge: () => void;
   onExitChallenge: () => void;
+  onOpenSettings: () => void;
 }
 
 const SIZES: GridSize[] = [3, 4, 5];
 
 export const ControlPanel: React.FC<ControlPanelProps> = ({
-  isColored,
-  onToggleColored,
   gridSize,
   onSizeChange,
-  statsOpen,
-  onToggleStats,
-  onOpenReplay,
-  onOpenShortcuts,
   undoDisabled,
   onUndo,
   onRestart,
   isChallenge,
   onStartChallenge,
   onExitChallenge,
+  onOpenSettings,
 }) => {
   return (
     <div className="game-intro">
       <div className="intro-buttons">
-        <button
-          className="theme-button"
-          onClick={onToggleColored}
-          aria-label="Toggle tile colors"
-          title={isColored ? 'Switch to monochrome tiles' : 'Switch to color tiles'}
-        >
-          {isColored ? 'Mono' : 'Color'}
-        </button>
-
         <div className="size-selector" role="group" aria-label="Board size">
           {SIZES.map((s) => (
             <button
@@ -61,37 +42,6 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
             </button>
           ))}
         </div>
-
-        <button
-          className="stats-button"
-          onClick={onToggleStats}
-          aria-label="Stats"
-          disabled={isChallenge}
-        >
-          {statsOpen ? 'Hide Stats' : 'Stats'}
-        </button>
-
-        {onOpenReplay && (
-          <button
-            className="stats-button"
-            onClick={onOpenReplay}
-            aria-label="Replay"
-            title="Open game replay player"
-          >
-            Replay 🎬
-          </button>
-        )}
-
-        {onOpenShortcuts && (
-          <button
-            className="stats-button"
-            onClick={onOpenShortcuts}
-            aria-label="Shortcuts"
-            title="View keyboard shortcuts"
-          >
-            Keys ⌨️
-          </button>
-        )}
 
         <button
           className="undo-button"
@@ -115,6 +65,15 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
             Challenge
           </button>
         )}
+
+        <button
+          className="stats-button"
+          onClick={onOpenSettings}
+          aria-label="Settings"
+          title="Game Settings"
+        >
+          Settings
+        </button>
       </div>
     </div>
   );

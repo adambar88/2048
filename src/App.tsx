@@ -14,6 +14,7 @@ import { AchievementsModal } from './components/Modals/AchievementsModal';
 import { StatsModal } from './components/Modals/StatsModal';
 import { ShortcutsModal } from './components/Modals/ShortcutsModal';
 import { ReplayModal } from './components/Modals/ReplayModal';
+import { SettingsModal } from './components/Modals/SettingsModal';
 import { LiveAnnouncer } from './components/Accessibility/LiveAnnouncer';
 
 const THEME_KEY = 'barczynski-theme';
@@ -131,6 +132,7 @@ function App() {
   const [statsOpen, setStatsOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [replayOpen, setReplayOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [customReplaySession, setCustomReplaySession] = useState<ReplaySession | null>(null);
 
   // Challenge mode state
@@ -273,7 +275,7 @@ function App() {
     onUndo: handleUndo,
     onReset: () => handleRestartGame(),
     onToggleHelp: () => setShortcutsOpen((o) => !o),
-    disabled: achievementsOpen || statsOpen || shortcutsOpen || replayOpen,
+    disabled: achievementsOpen || statsOpen || shortcutsOpen || replayOpen || settingsOpen,
   });
 
   const isChallenge = challengeStatus !== 'idle';
@@ -331,20 +333,15 @@ function App() {
 
       {/* Control Panel */}
       <ControlPanel
-        isColored={isColored}
-        onToggleColored={() => setIsColored((c) => !c)}
         gridSize={gridSize}
         onSizeChange={(size) => handleRestartGame(size)}
-        statsOpen={statsOpen}
-        onToggleStats={() => setStatsOpen((o) => !o)}
-        onOpenReplay={() => setReplayOpen(true)}
-        onOpenShortcuts={() => setShortcutsOpen(true)}
         undoDisabled={!undoSnapshot || gameOver}
         onUndo={handleUndo}
         onRestart={() => handleRestartGame()}
         isChallenge={isChallenge}
         onStartChallenge={startChallenge}
         onExitChallenge={exitChallenge}
+        onOpenSettings={() => setSettingsOpen(true)}
       />
 
       {/* Game Board */}
@@ -416,6 +413,16 @@ function App() {
         onClose={() => setReplayOpen(false)}
         session={customReplaySession || getReplaySession()}
         onLoadCustomSession={(s) => setCustomReplaySession(s)}
+      />
+
+      <SettingsModal
+        isOpen={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        isColored={isColored}
+        onToggleColored={() => setIsColored((c) => !c)}
+        onOpenStats={() => setStatsOpen(true)}
+        onOpenReplay={() => setReplayOpen(true)}
+        onOpenShortcuts={() => setShortcutsOpen(true)}
       />
 
       {/* Live Accessibility Announcer */}

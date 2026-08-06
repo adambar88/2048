@@ -47,11 +47,11 @@ export const Header: React.FC<HeaderProps> = ({
             aria-label="Select Game Mode"
           >
             <option value={GameMode.CLASSIC}>Classic</option>
-            <option value={GameMode.BLITZ}>Blitz ⚡</option>
-            <option value={GameMode.OBSTACLES}>Obstacles 🪨</option>
-            <option value={GameMode.FIBONACCI}>Fibonacci 🔢</option>
-            <option value={GameMode.ZEN}>Zen 🧘</option>
-            <option value={GameMode.CUSTOM_TARGET}>Custom Target 🎯</option>
+            <option value={GameMode.BLITZ}>Blitz</option>
+            <option value={GameMode.OBSTACLES}>Obstacles</option>
+            <option value={GameMode.FIBONACCI}>Fibonacci</option>
+            <option value={GameMode.ZEN}>Zen</option>
+            <option value={GameMode.CUSTOM_TARGET}>Custom Target</option>
           </select>
         </div>
 

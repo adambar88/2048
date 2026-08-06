@@ -45,7 +45,7 @@ export const StatsModal: React.FC<StatsModalProps> = ({
         <button className="help-close" onClick={onClose} aria-label="Close">
           ×
         </button>
-        <h2 className="help-title">📊 Game Statistics</h2>
+        <h2 className="help-title">Game Statistics</h2>
         <div className="stats-row">
           <div className="stat-item">
             <span className="stat-value">{stats.gamesPlayed}</span>
@@ -87,7 +87,7 @@ export const StatsModal: React.FC<StatsModalProps> = ({
           ))}
           {challengeBest > 0 && (
             <div className="leaderboard-row leaderboard-row-challenge">
-              <span className="leaderboard-size">⚡ Challenge</span>
+              <span className="leaderboard-size">Challenge</span>
               <span className="leaderboard-right">
                 <span className="leaderboard-tile-badge">
                   {challengeTargets[Math.min(challengeBest, challengeTargets.length) - 1]}
