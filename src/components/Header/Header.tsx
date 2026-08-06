@@ -36,13 +36,43 @@ export const Header: React.FC<HeaderProps> = ({
   challengeLevel,
 }) => {
   return (
-    <div className="header">
-      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
+    <header className="header">
+      <div className="header-top">
+        <div className="header-left">
+          <h1 className="header-title">2048</h1>
+          <select
+            className="game-mode-select"
+            value={gameMode}
+            onChange={(e) => onGameModeChange(e.target.value as GameMode)}
+            aria-label="Select Game Mode"
+          >
+            <option value={GameMode.CLASSIC}>Classic</option>
+            <option value={GameMode.BLITZ}>Blitz ⚡</option>
+            <option value={GameMode.OBSTACLES}>Obstacles 🪨</option>
+            <option value={GameMode.FIBONACCI}>Fibonacci 🔢</option>
+            <option value={GameMode.ZEN}>Zen 🧘</option>
+            <option value={GameMode.CUSTOM_TARGET}>Custom Target 🎯</option>
+          </select>
+        </div>
+
+        <ScoreBoard
+          score={score}
+          bestScore={bestScore}
+          scoreDelta={scoreDelta}
+          onDeltaEnd={onDeltaEnd}
+          isChallenge={isChallenge}
+          challengeTarget={challengeTarget}
+          challengeTimeLeft={challengeTimeLeft}
+          challengeLevel={challengeLevel}
+        />
+      </div>
+
+      <div className="header-actions">
         <button
           className="icon-button"
           onClick={onToggleMute}
           aria-label="Toggle Mute"
-          title="Toggle Mute"
+          title={isMuted ? 'Unmute sound' : 'Mute sound'}
         >
           {isMuted ? '🔇' : '🔊'}
         </button>
@@ -50,53 +80,20 @@ export const Header: React.FC<HeaderProps> = ({
           className="icon-button"
           onClick={onToggleAchievements}
           aria-label="Achievements"
-          title="Achievements"
+          title="View achievements"
         >
           🏆
         </button>
-        <select
-          value={gameMode}
-          onChange={(e) => onGameModeChange(e.target.value as GameMode)}
-          style={{
-            padding: '5px',
-            borderRadius: '4px',
-            background: 'var(--btn-bg)',
-            color: 'var(--text)',
-            border: '1px solid var(--btn-border)',
-            cursor: 'pointer',
-          }}
-          aria-label="Select Game Mode"
+        <button
+          className="help-btn"
+          onClick={onToggleHelp}
+          aria-label="How to play"
+          title="How to play"
         >
-          <option value={GameMode.CLASSIC}>Classic</option>
-          <option value={GameMode.BLITZ}>Blitz</option>
-          <option value={GameMode.OBSTACLES}>Obstacles</option>
-          <option value={GameMode.FIBONACCI}>Fibonacci</option>
-          <option value={GameMode.ZEN}>Zen</option>
-          <option value={GameMode.CUSTOM_TARGET}>Custom Target</option>
-        </select>
+          <span className="help-btn-icon">?</span>
+          <span className="help-btn-label">How to play</span>
+        </button>
       </div>
-
-      <h1>2048</h1>
-      <button
-        className="help-btn"
-        onClick={onToggleHelp}
-        aria-label="How to play"
-        title="How to play"
-      >
-        <span className="help-btn-icon">?</span>
-        <span className="help-btn-label">How to play</span>
-      </button>
-
-      <ScoreBoard
-        score={score}
-        bestScore={bestScore}
-        scoreDelta={scoreDelta}
-        onDeltaEnd={onDeltaEnd}
-        isChallenge={isChallenge}
-        challengeTarget={challengeTarget}
-        challengeTimeLeft={challengeTimeLeft}
-        challengeLevel={challengeLevel}
-      />
-    </div>
+    </header>
   );
 };

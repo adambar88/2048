@@ -20,9 +20,10 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
   display: flex;
-  justify-content: center;
-  align-items: safe center;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
   width: 100%;
-  padding: 16px 0;
+  padding: max(48px, calc(16px + env(safe-area-inset-top))) 12px max(24px, env(safe-area-inset-bottom));
   box-sizing: border-box;
 }
