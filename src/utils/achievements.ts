@@ -24,8 +24,8 @@ export interface GameState {
   isGameOver?: boolean;
 }
 
-const STORAGE_KEY_STATS = '2048_stats';
-const STORAGE_KEY_BADGES = '2048_badges';
+const STORAGE_KEY_STATS = '2048_game_stats_v2';
+const STORAGE_KEY_BADGES = '2048_unlocked_badges_v2';
 
 export const BADGES_DEF: Badge[] = [
   { id: 'flawless', name: 'Flawless', description: 'Win without Undo', isUnlocked: false },

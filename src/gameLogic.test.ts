@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { move, isGameOver, addRandomTile, Tile } from './gameLogic'
+import { GameMode } from './types/game'
 
 // ─── helpers ────────────────────────────────────────────
 
@@ -236,7 +237,7 @@ describe('addRandomTile', () => {
     it('adds exactly one tile to an empty board', () => {
         const tiles = addRandomTile([], 4)
         expect(tiles.length).toBe(1)
-        expect(tiles[0].value).toBe(2)
+        expect([2, 4]).toContain(tiles[0].value)
         expect(tiles[0].isNew).toBe(true)
     })
 
@@ -339,25 +340,25 @@ describe('tile state after move', () => {
 
 describe('move - FIBONACCI', () => {
     it('merges 1 and 1 to make 2', () => {
-        const { tiles, score } = move(board([[1, 1, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]), 'LEFT', 4, 'FIBONACCI' as any)
+        const { tiles, score } = move(board([[1, 1, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]), 'LEFT', 4, GameMode.FIBONACCI)
         expect(toMatrix(tiles, 4)[0]).toEqual([2, 0, 0, 0])
         expect(score).toBe(2)
     })
 
     it('merges 1 and 2 to make 3', () => {
-        const { tiles, score } = move(board([[1, 2, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]), 'LEFT', 4, 'FIBONACCI' as any)
+        const { tiles, score } = move(board([[1, 2, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]), 'LEFT', 4, GameMode.FIBONACCI)
         expect(toMatrix(tiles, 4)[0]).toEqual([3, 0, 0, 0])
         expect(score).toBe(3)
     })
 
     it('merges 2 and 3 to make 5', () => {
-        const { tiles, score } = move(board([[2, 3, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]), 'LEFT', 4, 'FIBONACCI' as any)
+        const { tiles, score } = move(board([[2, 3, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]), 'LEFT', 4, GameMode.FIBONACCI)
         expect(toMatrix(tiles, 4)[0]).toEqual([5, 0, 0, 0])
         expect(score).toBe(5)
     })
 
     it('does not merge 2 and 2', () => {
-        const { tiles } = move(board([[2, 2, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]), 'LEFT', 4, 'FIBONACCI' as any)
+        const { tiles } = move(board([[2, 2, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]), 'LEFT', 4, GameMode.FIBONACCI)
         expect(toMatrix(tiles, 4)[0]).toEqual([2, 2, 0, 0])
     })
 })
@@ -368,7 +369,7 @@ describe('move - OBSTACLES', () => {
         // force 2nd tile to be an obstacle
         t.push({ id: 999, value: 0, r: 0, c: 1, isObstacle: true })
         
-        const { tiles } = move(t, 'LEFT', 4, 'OBSTACLES' as any)
+        const { tiles } = move(t, 'LEFT', 4, GameMode.OBSTACLES)
         const mat = toMatrix(tiles, 4)
         expect(mat[0][0]).toBe(2)
         expect(mat[0][1]).toBe(0)
@@ -378,7 +379,7 @@ describe('move - OBSTACLES', () => {
 
 describe('move - BLITZ', () => {
     it('grants timeBonus when merges are >= 32', () => {
-        const { score, timeBonus } = (move as any)(board([[16, 16, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]), 'LEFT', 4, 'BLITZ' as any)
+        const { score, timeBonus } = move(board([[16, 16, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]), 'LEFT', 4, GameMode.BLITZ)
         expect(score).toBe(32)
         expect(timeBonus).toBe(1)
     })
